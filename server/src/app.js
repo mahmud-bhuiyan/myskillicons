@@ -24,11 +24,11 @@ async function createApp() {
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
   app.get('/', (req, res) => {
-    res.type("text").send("My Skill Icons backend server is running 🚀");
+    res.type("text").send("MyIconix backend server is running 🚀");
   });
 
   app.get('/health', (req, res) => {
-    res.json({ status: 'ok', message: 'SkillIcons API running' });
+    res.json({ status: 'ok', message: 'MyIconix API running' });
   });
 
   app.use('/icons', require('./routes/iconRoutes'));

@@ -1,6 +1,6 @@
-# SkillIcons Client
+# MyIconix Client
 
-React + Vite frontend for SkillIcons.
+React + Vite frontend for MyIconix.
 
 See the [root README](../README.md) for setup, API docs, and project overview.
 

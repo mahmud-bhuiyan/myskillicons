@@ -53,7 +53,7 @@ export default function Navbar() {
     <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="text-zinc-900 dark:text-white font-bold text-lg tracking-tight">
-          skill<span className="text-yellow-500 dark:text-yellow-400">icons</span>
+          my<span className="text-yellow-500 dark:text-yellow-400">iconix</span>
         </Link>
         <div className="flex items-center gap-6">
           {navItems.map(item => {

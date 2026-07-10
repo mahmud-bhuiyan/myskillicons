@@ -7,10 +7,10 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8">
           <div>
             <p className="font-bold text-lg tracking-tight mb-1">
-              skill<span className="text-yellow-500 dark:text-yellow-400">icons</span>
+              my<span className="text-yellow-500 dark:text-yellow-400">iconix</span>
             </p>
             <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
-              Skill icons for developers — one URL, no hosting, no CSS.
+              Icons for developers — one URL, no hosting, no CSS.
             </p>
           </div>
 

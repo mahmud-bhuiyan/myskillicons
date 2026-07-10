@@ -23,11 +23,10 @@ export default function Home() {
       {/* Hero */}
       <div className="text-center py-20">
         <h1 className="text-5xl font-bold mb-4 tracking-tight">
-          Skill icons for<br/>
-          <span className="text-yellow-500 dark:text-yellow-400">developers</span>
+          my<span className="text-yellow-500 dark:text-yellow-400">iconix</span>
         </h1>
         <p className="text-zinc-600 dark:text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
-          Showcase your tech skills anywhere — portfolio, README, or client site.
+          Icons for developers — showcase your tech stack anywhere.
           One URL. No hosting. No CSS.
         </p>
         <div className="flex gap-3 justify-center flex-wrap">

@@ -1,6 +1,6 @@
-# SkillIcons
+# MyIconix
 
-Serve skill icons as SVG via URL — with themes, sizing, batch layouts, a gallery, community requests, and an admin panel.
+Serve icons as SVG via URL — with themes, sizing, batch layouts, a gallery, community requests, and an admin panel.
 
 Embed icons in READMEs, portfolios, and docs with a single image URL.
 
