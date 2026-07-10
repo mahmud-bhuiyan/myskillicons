@@ -23,6 +23,13 @@ async function createApp() {
   app.use(express.urlencoded({ extended: true }));
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+  app.get('/', (req, res) => {
+    res.json({
+      status: "ok",
+      message: "myskillicons backend server is running",
+    });
+  });
+
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'SkillIcons API running' });
   });
@@ -40,15 +47,33 @@ async function createApp() {
 
 function getApp() {
   if (!appPromise) {
-    appPromise = createApp();
+    appPromise = createApp().catch((err) => {
+      // Allow the next request to retry after a failed cold start
+      appPromise = null;
+      throw err;
+    });
   }
   return appPromise;
 }
 
 /** Vercel serverless entry — Express handles the request after warm/cold init. */
 async function handler(req, res) {
-  const app = await getApp();
-  return app(req, res);
+  try {
+    const app = await getApp();
+    return app(req, res);
+  } catch (err) {
+    console.error('Serverless handler failed:', err);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(
+        JSON.stringify({
+          error: 'Server failed to start',
+          message: err.message || String(err),
+        })
+      );
+    }
+  }
 }
 
 module.exports = handler;

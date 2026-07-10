@@ -22,14 +22,23 @@ const connectDB = async () => {
     return mongoose.connection;
   }
 
+  const uri = process.env.MONGO_URI;
+  if (!uri) {
+    throw new Error(
+      'MONGO_URI is not set. Add it in Vercel → Project → Settings → Environment Variables.'
+    );
+  }
+
   try {
-    const uri = process.env.MONGO_URI;
     fixLocalDnsForAtlas(uri);
-    const conn = await mongoose.connect(uri);
+    const conn = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 10000,
+      maxPoolSize: 5,
+    });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn.connection;
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`MongoDB Error: ${error.message}`);
     throw error;
   }
 };
