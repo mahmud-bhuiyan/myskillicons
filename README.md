@@ -92,18 +92,9 @@ cd myskillicons
 
 ### 2. Install dependencies
 
-Install **root**, **server**, and **client** packages. Root-only `npm install` is not enough — `nodemon` and `vite` live in `server/` and `client/`.
+Install packages in **server** and **client** (each has its own `node_modules`):
 
 ```bash
-# from repo root
-npm install
-npm run install:all
-```
-
-Or install each package manually:
-
-```bash
-npm install
 cd server && npm install && cd ..
 cd client && npm install && cd ..
 ```
@@ -149,17 +140,21 @@ Make sure MongoDB is running before starting the API.
 
 ### 5. Run the app
 
-From the **repo root**, start API + frontend together:
+Use two terminals — one for the API, one for the frontend:
 
 ```bash
-npm run dev
+# Terminal 1 — API
+cd server && npm run dev
+
+# Terminal 2 — frontend
+cd client && npm run dev
 ```
 
 You should see something like:
 
 ```
-[server] Server running on port 5000
-[client] ➜  Local:   http://localhost:5173/
+Server running on port 5000
+➜  Local:   http://localhost:5173/
 ```
 
 Default icons are seeded automatically on first server start.
@@ -169,16 +164,6 @@ Default icons are seeded automatically on first server start.
 | Frontend | http://localhost:5173 |
 | API | http://localhost:5000 |
 | Health check | http://localhost:5000/health |
-
-**Optional — two terminals instead of one:**
-
-```bash
-# Terminal 1
-npm run dev:server
-
-# Terminal 2
-npm run dev:client
-```
 
 ### 6. Quick check
 
@@ -194,7 +179,7 @@ curl "http://localhost:5000/icons?i=js,react,nodejs&theme=dark"
 
 | Problem | Fix |
 |---------|-----|
-| `'nodemon' is not recognized` / `'vite' is not recognized` | You only installed at the root. Run `npm run install:all` from the repo root. |
+| `'nodemon' is not recognized` / `'vite' is not recognized` | Run `npm install` inside `server/` and `client/` respectively. |
 | MongoDB connection errors | Start local MongoDB, or set a valid `MONGO_URI` in `server/.env`. |
 | Port already in use | Change `PORT` in `server/.env`, or stop the process using 5000 / 5173. |
 | Frontend can't reach API | Confirm the server is on port 5000 and you're using the Vite proxy (`VITE_API_URL=/api/v1`). |
@@ -281,31 +266,20 @@ All under `/api/v1` unless noted.
 
 ## Scripts
 
-**Root**
+**Server** (`cd server`)
 
 | Command | Description |
 |---------|-------------|
-| `npm install` | Install root tooling (`concurrently`) |
-| `npm run install:all` | Install `server/` and `client/` dependencies |
-| `npm run dev` | Start server + client together |
-| `npm run dev:server` | Start API only |
-| `npm run dev:client` | Start frontend only |
-| `npm run seed` | Seed default icons into MongoDB |
-| `npm run build` | Build the client |
-| `npm start` | Start production API (`server`) |
-
-**Server**
-
-| Command | Description |
-|---------|-------------|
+| `npm install` | Install server dependencies |
 | `npm run dev` | Start with nodemon |
 | `npm start` | Start production server |
 | `npm run seed` | Seed default icons into MongoDB |
 
-**Client**
+**Client** (`cd client`)
 
 | Command | Description |
 |---------|-------------|
+| `npm install` | Install client dependencies |
 | `npm run dev` | Vite dev server |
 | `npm run build` | Production build |
 | `npm run preview` | Preview production build |
@@ -329,10 +303,6 @@ Default icons are defined in `server/src/utils/iconSeedData.js` — each entry i
 Make sure `server/.env` points at your local DB, then:
 
 ```bash
-# from repo root
-npm run seed
-
-# or from server/
 cd server
 npm run seed
 ```
