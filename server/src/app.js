@@ -24,10 +24,7 @@ async function createApp() {
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
   app.get('/', (req, res) => {
-    res.json({
-      status: "ok",
-      message: "myskillicons backend server is running",
-    });
+    res.type("text").send("My Skill Icons backend server is running 🚀");
   });
 
   app.get('/health', (req, res) => {
