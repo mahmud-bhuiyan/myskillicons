@@ -1,11 +1,20 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const Admin = require('../models/Admin');
 const IconRequest = require('../models/IconRequest');
 
 const generateToken = (id) => jwt.sign({ id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '7d' });
+
+function safeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 const AVATAR_DIR = path.join(__dirname, '../../uploads/avatars');
 
@@ -38,10 +47,21 @@ function removeAvatarFile(avatarUrl) {
 }
 
 /**
- * POST /api/v1/admin/setup — Create admin account (only works if no admin exists)
+ * POST /api/v1/admin/setup — Create admin account (only works if no admin exists).
+ * Requires setupKey (body) or x-setup-key (header) matching ADMIN_JWT_SECRET.
  */
 const setupAdmin = async (req, res) => {
   try {
+    const expected = process.env.ADMIN_JWT_SECRET;
+    if (!expected) {
+      return res.status(500).json({ error: 'ADMIN_JWT_SECRET is not configured on the server' });
+    }
+
+    const provided = req.body?.setupKey || req.get('x-setup-key') || '';
+    if (!safeEqual(provided, expected)) {
+      return res.status(403).json({ error: 'Invalid or missing setup key' });
+    }
+
     const count = await Admin.countDocuments();
     if (count > 0) return res.status(403).json({ error: 'Admin already exists' });
 
