@@ -2,8 +2,8 @@ const { processSingleIcon, processBatchIcons, validateParams, LIMITS } = require
 const iconRegistry = require('../utils/iconRegistry');
 
 /**
- * GET /icons?i=js&theme=dark&width=48&height=48
- * GET /icons?i=js,react,nodejs&theme=dark&width=48&height=48
+ * GET /api/v1/icons?i=js&theme=dark&width=48&height=48
+ * GET /api/v1/icons?i=js,react,nodejs&theme=dark&width=48&height=48
  */
 const getIcons = (req, res) => {
   const { i, theme, width, height, layout, gap } = validateParams(req.query);
@@ -41,7 +41,7 @@ const getIcons = (req, res) => {
 };
 
 /**
- * GET /icons/list — returns all available icon keys and metadata
+ * GET /api/v1/icons/list — returns all available icon keys and metadata
  */
 const listIcons = (req, res) => {
   const icons = Object.entries(iconRegistry).map(([key, meta]) => ({

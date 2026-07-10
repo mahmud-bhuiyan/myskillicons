@@ -14,17 +14,18 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
-// Health check
+// Health check (unversioned for load balancers / uptime monitors)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'SkillIcons API running' });
 });
 
-app.use('/icons', require('./routes/iconRoutes'));
+const apiV1 = express.Router();
+apiV1.use('/icons', require('./routes/iconRoutes'));
+apiV1.use('/request', require('./routes/requestRoutes'));
+apiV1.use('/gallery', require('./routes/galleryRoutes'));
+apiV1.use('/admin', require('./routes/adminRoutes'));
 
-// Routes (will add in later phases)
-// app.use('/gallery', require('./routes/galleryRoutes'));
-// app.use('/request', require('./routes/requestRoutes'));
-// app.use('/admin', require('./routes/adminRoutes'));
+app.use('/api/v1', apiV1);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
