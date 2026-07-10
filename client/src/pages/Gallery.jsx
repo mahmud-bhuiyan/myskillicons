@@ -13,20 +13,28 @@ export default function Gallery() {
   const [theme, setTheme] = useState('dark');
   const [size, setSize] = useState(48);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(null);
 
   useEffect(() => {
     Promise.all([
       api.get('/gallery'),
       api.get('/gallery/categories'),
-    ]).then(([iconsRes, catRes]) => {
-      setIcons(iconsRes.data.icons);
-      const nextCategories = catRes.data.categories?.length
-        ? catRes.data.categories
-        : ['all'];
-      setCategories(nextCategories);
-      setLoading(false);
-    });
+    ])
+      .then(([iconsRes, catRes]) => {
+        setIcons(Array.isArray(iconsRes.data?.icons) ? iconsRes.data.icons : []);
+        const nextCategories = catRes.data?.categories?.length
+          ? catRes.data.categories
+          : ['all'];
+        setCategories(nextCategories);
+        setLoadError('');
+      })
+      .catch((err) => {
+        console.error('Failed to load gallery:', err);
+        setIcons([]);
+        setLoadError('Could not reach the API. Check VITE_API_URL on the client deploy.');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -47,6 +55,9 @@ export default function Gallery() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-1">Icon Gallery</h1>
       <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">{icons.length} icons available. Click any icon to get its URL.</p>
+      {loadError && (
+        <p className="mb-6 text-sm text-red-500 dark:text-red-400">{loadError}</p>
+      )}
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

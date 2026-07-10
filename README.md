@@ -238,7 +238,7 @@ All under `/api/v1` unless noted.
 | `POST` | `/request` | Submit an icon request |
 | `GET` | `/request` | List requests |
 | `POST` | `/request/:id/upvote` | Upvote a request |
-| `POST` | `/admin/setup` | Create first admin (requires `setupKey` = `ADMIN_JWT_SECRET`) |
+| `POST` | `/admin/setup` | Create first admin (`Authorization: Bearer <ADMIN_JWT_SECRET>`) |
 | `POST` | `/admin/login` | Admin login (JWT) |
 | `GET` | `/admin/me` | Current admin (auth) |
 | `PATCH` | `/admin/password` | Change password (auth) |

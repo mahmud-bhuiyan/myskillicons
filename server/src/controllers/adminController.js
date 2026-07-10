@@ -48,7 +48,7 @@ function removeAvatarFile(avatarUrl) {
 
 /**
  * POST /api/v1/admin/setup — Create admin account (only works if no admin exists).
- * Requires setupKey (body) or x-setup-key (header) matching ADMIN_JWT_SECRET.
+ * Requires Authorization: Bearer <ADMIN_JWT_SECRET>.
  */
 const setupAdmin = async (req, res) => {
   try {
@@ -57,7 +57,10 @@ const setupAdmin = async (req, res) => {
       return res.status(500).json({ error: 'ADMIN_JWT_SECRET is not configured on the server' });
     }
 
-    const provided = req.body?.setupKey || req.get('x-setup-key') || '';
+    const authHeader = req.get('authorization') || '';
+    const provided = authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : '';
     if (!safeEqual(provided, expected)) {
       return res.status(403).json({ error: 'Invalid or missing setup key' });
     }

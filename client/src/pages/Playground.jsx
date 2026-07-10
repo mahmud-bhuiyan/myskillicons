@@ -23,9 +23,20 @@ export default function Playground() {
   const [search, setSearch] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    api.get('/gallery').then(res => setAllIcons(res.data.icons));
+    api
+      .get('/gallery')
+      .then((res) => {
+        setAllIcons(Array.isArray(res.data?.icons) ? res.data.icons : []);
+        setLoadError('');
+      })
+      .catch((err) => {
+        console.error('Failed to load icons:', err);
+        setAllIcons([]);
+        setLoadError('Could not reach the API. Check VITE_API_URL on the client deploy.');
+      });
   }, []);
 
   const toggleIcon = (key) => {
@@ -63,6 +74,9 @@ export default function Playground() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-1">Icon Playground</h1>
       <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-sm">Pick icons, customize settings, and copy your embed URL.</p>
+      {loadError && (
+        <p className="mb-6 text-sm text-red-500 dark:text-red-400">{loadError}</p>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 

@@ -13,7 +13,10 @@ export default function RequestIcon() {
   const [existingRequests, setExistingRequests] = useState([]);
 
   useEffect(() => {
-    api.get('/request').then(res => setExistingRequests(res.data.requests));
+    api
+      .get('/request')
+      .then((res) => setExistingRequests(Array.isArray(res.data?.requests) ? res.data.requests : []))
+      .catch(() => setExistingRequests([]));
   }, []);
 
   const handleSubmit = async (e) => {
