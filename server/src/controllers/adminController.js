@@ -72,13 +72,8 @@ const setupAdmin = async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'username and password required' });
     if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-    const admin = await Admin.create({ username, password });
-    res.status(201).json({
-      message: 'Admin created',
-      token: generateToken(admin._id),
-      username: admin.username,
-      avatar: admin.avatar || '',
-    });
+    await Admin.create({ username, password });
+    res.status(201).json({ message: 'Admin created' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

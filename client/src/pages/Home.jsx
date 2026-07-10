@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { buildIconUrl, getServerOrigin } from '../utils/serverUrl';
+import { buildIconUrl } from '../utils/serverUrl';
 
 const DEMO_ICONS = ['js', 'react', 'nodejs', 'python', 'mongodb', 'html', 'css', 'typescript'];
+/** Public URL shown in copy-paste examples (not localhost). */
+const EXAMPLE_BASE = 'https://myiconixx.vercel.app';
 
 export default function Home() {
   const { theme } = useTheme();
   const iconTheme = theme === 'light' ? 'light' : 'dark';
-  const exampleBase = getServerOrigin() || 'https://myskillicons.com';
 
   return (
     <div className="max-w-5xl mx-auto px-4">
@@ -75,10 +76,10 @@ export default function Home() {
         <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-3">Paste anywhere that accepts an image URL:</p>
         <pre className="text-sm text-yellow-700 dark:text-yellow-300 font-mono overflow-x-auto">
 {`<!-- In HTML -->
-<img src="${exampleBase}/icons?i=js,react,nodejs&theme=dark" />
+<img src="${EXAMPLE_BASE}/icons?i=js,react,nodejs&theme=dark" />
 
 <!-- In Markdown (README) -->
-![My Skills](${exampleBase}/icons?i=js,react,nodejs&theme=dark)`}
+![My Skills](${EXAMPLE_BASE}/icons?i=js,react,nodejs&theme=dark)`}
         </pre>
       </div>
 
