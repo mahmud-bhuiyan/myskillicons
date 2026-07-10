@@ -1,41 +1,21 @@
 import { useState, useEffect } from 'react';
-import api from '../utils/api';
+import { useIcons } from '../context/IconsContext';
 import { buildIconUrl } from '../utils/serverUrl';
 
 const fieldClass =
   'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
 
 export default function Gallery() {
-  const [icons, setIcons] = useState([]);
-  const [categories, setCategories] = useState(['all']);
+  const { icons, categories, loading, error: loadError, refresh } = useIcons();
   const [activeCategory, setActiveCategory] = useState('all');
   const [search, setSearch] = useState('');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   const [size, setSize] = useState(48);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      api.get('/gallery'),
-      api.get('/gallery/categories'),
-    ])
-      .then(([iconsRes, catRes]) => {
-        setIcons(Array.isArray(iconsRes.data?.icons) ? iconsRes.data.icons : []);
-        const nextCategories = catRes.data?.categories?.length
-          ? catRes.data.categories
-          : ['all'];
-        setCategories(nextCategories);
-        setLoadError('');
-      })
-      .catch((err) => {
-        console.error('Failed to load gallery:', err);
-        setIcons([]);
-        setLoadError('Could not reach the API. Check VITE_API_URL on the client deploy.');
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     if (!categories.includes(activeCategory)) {
@@ -50,6 +30,8 @@ export default function Gallery() {
 
   const iconUrl = (key) =>
     buildIconUrl({ i: key, theme, width: size, height: size });
+
+  const showInitialLoading = loading && icons.length === 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -73,7 +55,7 @@ export default function Gallery() {
           onChange={e => setTheme(e.target.value)}
           className={fieldClass}
         >
-          {['dark', 'light'].map((t) => (
+          {['light', 'dark'].map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
@@ -106,7 +88,7 @@ export default function Gallery() {
       </div>
 
       {/* Grid */}
-      {loading ? (
+      {showInitialLoading ? (
         <div className="text-zinc-500 text-center py-20">Loading icons...</div>
       ) : (
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">

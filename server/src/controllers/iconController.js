@@ -2,8 +2,9 @@ const { processSingleIcon, processBatchIcons, validateParams, LIMITS } = require
 const iconStore = require('../utils/iconStore');
 
 /**
- * GET /icons?i=js&theme=dark&width=48&height=48
- * GET /icons?i=js,react,nodejs&theme=dark&width=48&height=48
+ * GET /icons?i=js&theme=light&width=48&height=48
+ * GET /icons?i=js,react,nodejs&theme=light&width=48&height=48
+ * Theme defaults to light when omitted.
  */
 const getIcons = (req, res) => {
   const { i, theme, width, height, layout, gap } = validateParams(req.query);

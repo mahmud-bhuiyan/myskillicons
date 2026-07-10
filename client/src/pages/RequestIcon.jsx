@@ -1,23 +1,21 @@
 import { useState, useEffect } from 'react';
+import { useRequests } from '../context/RequestsContext';
 import api from '../utils/api';
 
 const fieldClass =
   'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
 
 export default function RequestIcon() {
+  const { requests: existingRequests, refresh } = useRequests();
   const [form, setForm] = useState({
     iconName: '', description: '', referenceUrl: '', submitterEmail: '', submitterName: ''
   });
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [existingRequests, setExistingRequests] = useState([]);
 
   useEffect(() => {
-    api
-      .get('/request')
-      .then((res) => setExistingRequests(Array.isArray(res.data?.requests) ? res.data.requests : []))
-      .catch(() => setExistingRequests([]));
-  }, []);
+    refresh();
+  }, [refresh]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,8 +25,7 @@ export default function RequestIcon() {
       const res = await api.post('/request', form);
       setStatus({ type: 'success', message: res.data.message });
       setForm({ iconName: '', description: '', referenceUrl: '', submitterEmail: '', submitterName: '' });
-      const updated = await api.get('/request');
-      setExistingRequests(updated.data.requests);
+      await refresh();
     } catch (err) {
       setStatus({ type: 'error', message: err.response?.data?.error || 'Something went wrong' });
     }
@@ -40,8 +37,7 @@ export default function RequestIcon() {
     if (!email) return;
     try {
       await api.post(`/request/${id}/upvote`, { email });
-      const updated = await api.get('/request');
-      setExistingRequests(updated.data.requests);
+      await refresh();
     } catch (err) {
       alert(err.response?.data?.error || 'Could not upvote');
     }

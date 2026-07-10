@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAdminData } from '../context/AdminDataContext';
+import { useIcons } from '../context/IconsContext';
 import api from '../utils/api';
 
 const STATUS_COLORS = {
@@ -35,13 +36,25 @@ export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'requests' ? 'requests' : 'icons';
 
-  const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending');
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null);
 
-  const [icons, setIcons] = useState([]);
-  const [iconsLoading, setIconsLoading] = useState(true);
+  const {
+    icons,
+    iconsLoading,
+    iconsLoaded,
+    requestsByStatus,
+    requestsLoadingByStatus,
+    refreshIcons,
+    refreshRequests,
+  } = useAdminData();
+  const { refresh: refreshPublicIcons } = useIcons();
+
+  const requests = requestsByStatus[filter] || [];
+  const showIconsLoading = iconsLoading && !iconsLoaded && icons.length === 0;
+  const showRequestsLoading =
+    Boolean(requestsLoadingByStatus[filter]) && !Array.isArray(requestsByStatus[filter]);
+
   const [iconSearch, setIconSearch] = useState('');
   const [customCategories, setCustomCategories] = useState([]);
   const [addingCategory, setAddingCategory] = useState(false);
@@ -56,41 +69,14 @@ export default function AdminDashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
   const setTab = (next) => {
     setSearchParams(next === 'requests' ? { tab: 'requests' } : { tab: 'icons' });
   };
 
-  const fetchRequests = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get(`/admin/requests?status=${filter}`);
-      setRequests(res.data.requests);
-    } catch {
-      logout();
-      navigate('/admin/login');
-    }
-    setLoading(false);
-  }, [filter, logout, navigate]);
-
-  const fetchIcons = useCallback(async () => {
-    setIconsLoading(true);
-    try {
-      const res = await api.get('/admin/icons');
-      setIcons(res.data.icons);
-    } catch {
-      logout();
-      navigate('/admin/login');
-    }
-    setIconsLoading(false);
-  }, [logout, navigate]);
-
   useEffect(() => {
-    if (tab === 'requests') fetchRequests();
-    else fetchIcons();
-  }, [tab, fetchRequests, fetchIcons]);
+    if (tab === 'requests') refreshRequests(filter);
+    else refreshIcons();
+  }, [tab, filter, refreshRequests, refreshIcons]);
 
   useEffect(() => {
     if (!showForm && !deleteTarget) return;
@@ -114,7 +100,8 @@ export default function AdminDashboard() {
     setUpdating(id);
     try {
       await api.patch(`/admin/requests/${id}`, { status, adminNote });
-      await fetchRequests();
+      await refreshRequests(filter);
+      if (status !== filter) await refreshRequests(status);
     } catch (err) {
       alert(err.response?.data?.error || 'Update failed');
     }
@@ -229,7 +216,8 @@ export default function AdminDashboard() {
         );
       }
 
-      await fetchIcons();
+      await refreshIcons();
+      refreshPublicIcons();
       setTimeout(resetForm, 700);
     } catch (err) {
       setFormError(err.response?.data?.error || 'Save failed');
@@ -281,7 +269,8 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/admin/icons/${key}`);
       setDeleteTarget(null);
-      await fetchIcons();
+      await refreshIcons();
+      refreshPublicIcons();
       if (editingKey === key) resetForm();
     } catch (err) {
       alert(err.response?.data?.error || 'Delete failed');
@@ -328,7 +317,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col flex-1 min-h-0 gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
             <p className="text-zinc-500 text-sm sm:mr-auto">
-              {iconsLoading
+              {showIconsLoading
                 ? 'Loading…'
                 : iconSearch.trim()
                   ? `${filteredIcons.length} of ${icons.length} icon${icons.length === 1 ? '' : 's'}`
@@ -658,7 +647,7 @@ export default function AdminDashboard() {
           )}
 
           <div className="flex-1 min-h-0 overflow-y-auto slim-scroll pr-1">
-            {iconsLoading ? (
+            {showIconsLoading ? (
               <p className="text-zinc-500">Loading icons…</p>
             ) : icons.length === 0 ? (
               <p className="text-zinc-600">No icons in the database yet.</p>
@@ -729,7 +718,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto slim-scroll pr-1">
-            {loading ? (
+            {showRequestsLoading ? (
               <p className="text-zinc-500">Loading...</p>
             ) : requests.length === 0 ? (
               <p className="text-zinc-600">No {filter} requests.</p>

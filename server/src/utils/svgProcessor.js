@@ -4,7 +4,7 @@ const iconStore = require('./iconStore');
 const cache = new NodeCache({ stdTTL: 3600 }); // cache 1 hour
 
 const DEFAULTS = {
-  theme: 'dark',
+  theme: 'light',
   width: 48,
   height: 48,
 };

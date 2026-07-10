@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useIcons } from '../context/IconsContext';
 import { buildIconUrl } from '../utils/serverUrl';
 
 const DEMO_ICONS = ['js', 'react', 'nodejs', 'python', 'mongodb', 'html', 'css', 'typescript'];
@@ -8,7 +10,12 @@ const EXAMPLE_BASE = 'https://myiconixx.vercel.app';
 
 export default function Home() {
   const { theme } = useTheme();
+  const { refresh } = useIcons();
   const iconTheme = theme === 'light' ? 'light' : 'dark';
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return (
     <div className="max-w-5xl mx-auto px-4">

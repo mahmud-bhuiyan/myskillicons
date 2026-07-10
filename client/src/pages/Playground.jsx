@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import api from '../utils/api';
+import { useIcons } from '../context/IconsContext';
 import { buildIconUrl } from '../utils/serverUrl';
 
-const THEMES = ['dark', 'light', 'auto'];
+const THEMES = ['light', 'dark', 'auto'];
 const LAYOUTS = ['row', 'grid'];
 const SIZES = [24, 32, 48, 64, 80, 96];
 
@@ -14,30 +14,19 @@ const surfaceClass =
   'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800';
 
 export default function Playground() {
-  const [allIcons, setAllIcons] = useState([]);
+  const { icons: allIcons, error: loadError, refresh } = useIcons();
   const [selected, setSelected] = useState([]);
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   const [size, setSize] = useState(48);
   const [layout, setLayout] = useState('row');
   const [gap, setGap] = useState(8);
   const [search, setSearch] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
-  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    api
-      .get('/gallery')
-      .then((res) => {
-        setAllIcons(Array.isArray(res.data?.icons) ? res.data.icons : []);
-        setLoadError('');
-      })
-      .catch((err) => {
-        console.error('Failed to load icons:', err);
-        setAllIcons([]);
-        setLoadError('Could not reach the API. Check VITE_API_URL on the client deploy.');
-      });
-  }, []);
+    refresh();
+  }, [refresh]);
 
   const toggleIcon = (key) => {
     setSelected(prev =>
