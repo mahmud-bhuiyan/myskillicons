@@ -5,6 +5,13 @@ const THEMES = ['dark', 'light', 'auto'];
 const LAYOUTS = ['row', 'grid'];
 const SIZES = [24, 32, 48, 64, 80, 96];
 
+const fieldClass =
+  'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
+const inactiveBtn =
+  'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500';
+const surfaceClass =
+  'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800';
+
 export default function Playground() {
   const [allIcons, setAllIcons] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -28,7 +35,7 @@ export default function Playground() {
 
   const buildUrl = () => {
     if (selected.length === 0) return '';
-    const base = `${window.location.origin}/api/v1/icons`;
+    const base = `${window.location.origin}/icons`;
     const params = new URLSearchParams({
       i: selected.join(','),
       theme,
@@ -56,7 +63,7 @@ export default function Playground() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-1">Icon Playground</h1>
-      <p className="text-zinc-400 mb-8 text-sm">Pick icons, customize settings, and copy your embed URL.</p>
+      <p className="text-zinc-600 dark:text-zinc-400 mb-8 text-sm">Pick icons, customize settings, and copy your embed URL.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -68,7 +75,7 @@ export default function Playground() {
               placeholder="Search icons..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400"
+              className={`flex-1 ${fieldClass}`}
             />
           </div>
 
@@ -81,7 +88,7 @@ export default function Playground() {
                 className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
                   activeCategory === cat
                     ? 'bg-yellow-400 text-black border-yellow-400 font-medium'
-                    : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'
+                    : inactiveBtn
                 }`}
               >
                 {cat}
@@ -99,11 +106,11 @@ export default function Playground() {
                 className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
                   selected.includes(icon.key)
                     ? 'border-yellow-400 bg-yellow-400/10'
-                    : 'border-zinc-800 hover:border-zinc-600'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
                 }`}
               >
                 <img
-                  src={`/api/v1/icons?i=${icon.key}&theme=${theme}&width=32&height=32`}
+                  src={`/icons?i=${icon.key}&theme=${theme}&width=32&height=32`}
                   width={32}
                   height={32}
                   alt={icon.name}
@@ -122,12 +129,12 @@ export default function Playground() {
           <div>
             <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Selected ({selected.length})</label>
             <div className="flex flex-wrap gap-1 min-h-8">
-              {selected.length === 0 && <span className="text-zinc-600 text-sm">Click icons to select</span>}
+              {selected.length === 0 && <span className="text-zinc-500 dark:text-zinc-600 text-sm">Click icons to select</span>}
               {selected.map(key => (
                 <span
                   key={key}
                   onClick={() => toggleIcon(key)}
-                  className="bg-zinc-800 text-zinc-300 text-xs px-2 py-1 rounded cursor-pointer hover:bg-red-900/40 hover:text-red-400 transition-colors"
+                  className="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs px-2 py-1 rounded cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/40 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                   {key} ×
                 </span>
@@ -144,7 +151,7 @@ export default function Playground() {
                   key={t}
                   onClick={() => setTheme(t)}
                   className={`flex-1 py-2 rounded-lg border text-sm capitalize transition-colors ${
-                    theme === t ? 'border-yellow-400 text-yellow-400' : 'border-zinc-700 text-zinc-400'
+                    theme === t ? 'border-yellow-400 text-yellow-600 dark:text-yellow-400' : inactiveBtn
                   }`}
                 >
                   {t}
@@ -162,7 +169,7 @@ export default function Playground() {
                   key={s}
                   onClick={() => setSize(s)}
                   className={`px-3 py-1 rounded border text-sm transition-colors ${
-                    size === s ? 'border-yellow-400 text-yellow-400' : 'border-zinc-700 text-zinc-400'
+                    size === s ? 'border-yellow-400 text-yellow-600 dark:text-yellow-400' : inactiveBtn
                   }`}
                 >
                   {s}
@@ -180,7 +187,7 @@ export default function Playground() {
                   key={l}
                   onClick={() => setLayout(l)}
                   className={`flex-1 py-2 rounded-lg border text-sm capitalize transition-colors ${
-                    layout === l ? 'border-yellow-400 text-yellow-400' : 'border-zinc-700 text-zinc-400'
+                    layout === l ? 'border-yellow-400 text-yellow-600 dark:text-yellow-400' : inactiveBtn
                   }`}
                 >
                   {l}
@@ -198,9 +205,9 @@ export default function Playground() {
           {/* Preview */}
           <div>
             <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Preview</label>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 min-h-20 flex items-center justify-center">
+            <div className={`${surfaceClass} rounded-lg p-4 min-h-20 flex items-center justify-center`}>
               {selected.length === 0
-                ? <span className="text-zinc-600 text-sm">Select icons to preview</span>
+                ? <span className="text-zinc-500 dark:text-zinc-600 text-sm">Select icons to preview</span>
                 : <img
                     src={buildUrl()}
                     alt="preview"
@@ -215,7 +222,7 @@ export default function Playground() {
           {selected.length > 0 && (
             <div>
               <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Embed URL</label>
-              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-400 break-all font-mono mb-2">
+              <div className={`${surfaceClass} rounded-lg p-3 text-xs text-zinc-600 dark:text-zinc-400 break-all font-mono mb-2`}>
                 {buildUrl()}
               </div>
               <button

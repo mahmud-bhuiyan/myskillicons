@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 
+const fieldClass =
+  'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
+
 export default function Gallery() {
   const [icons, setIcons] = useState([]);
   const [categories, setCategories] = useState(['all']);
@@ -17,10 +20,19 @@ export default function Gallery() {
       api.get('/gallery/categories'),
     ]).then(([iconsRes, catRes]) => {
       setIcons(iconsRes.data.icons);
-      setCategories(catRes.data.categories);
+      const nextCategories = catRes.data.categories?.length
+        ? catRes.data.categories
+        : ['all'];
+      setCategories(nextCategories);
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (!categories.includes(activeCategory)) {
+      setActiveCategory('all');
+    }
+  }, [categories, activeCategory]);
 
   const filtered = icons.filter(icon =>
     (activeCategory === 'all' || icon.category === activeCategory) &&
@@ -28,12 +40,12 @@ export default function Gallery() {
   );
 
   const iconUrl = (key) =>
-    `${window.location.origin}/api/v1/icons?i=${key}&theme=${theme}&width=${size}&height=${size}`;
+    `${window.location.origin}/icons?i=${key}&theme=${theme}&width=${size}&height=${size}`;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-1">Icon Gallery</h1>
-      <p className="text-zinc-400 text-sm mb-6">{icons.length} icons available. Click any icon to get its URL.</p>
+      <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">{icons.length} icons available. Click any icon to get its URL.</p>
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -42,19 +54,23 @@ export default function Gallery() {
           placeholder="Search icons..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400"
+          className={`flex-1 ${fieldClass}`}
         />
         <select
           value={theme}
           onChange={e => setTheme(e.target.value)}
-          className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none"
+          className={fieldClass}
         >
-          {['dark','light','auto'].map(t => <option key={t} value={t}>{t}</option>)}
+          {['dark', 'light'].map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
         </select>
         <select
           value={size}
           onChange={e => setSize(Number(e.target.value))}
-          className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none"
+          className={fieldClass}
         >
           {[24,32,48,64,80,96].map(s => <option key={s} value={s}>{s}px</option>)}
         </select>
@@ -69,7 +85,7 @@ export default function Gallery() {
             className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
               activeCategory === cat
                 ? 'bg-yellow-400 text-black border-yellow-400'
-                : 'border-zinc-700 text-zinc-400 hover:border-zinc-500'
+                : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500'
             }`}
           >
             {cat}
@@ -86,7 +102,7 @@ export default function Gallery() {
             <button
               key={icon.key}
               onClick={() => setSelectedIcon(icon)}
-              className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-zinc-800 hover:border-zinc-600 transition-all group"
+              className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all group"
             >
               <img
                 src={iconUrl(icon.key)}
@@ -95,7 +111,7 @@ export default function Gallery() {
                 alt={icon.name}
                 className="rounded"
               />
-              <span className="text-zinc-500 text-xs group-hover:text-zinc-300 transition-colors truncate w-full text-center">
+              <span className="text-zinc-500 text-xs group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors truncate w-full text-center">
                 {icon.name}
               </span>
             </button>
@@ -110,18 +126,18 @@ export default function Gallery() {
           onClick={() => setSelectedIcon(null)}
         >
           <div
-            className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full"
+            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-6 max-w-sm w-full"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center gap-4 mb-4">
               <img src={iconUrl(selectedIcon.key)} width={64} height={64} alt={selectedIcon.name} className="rounded-xl" />
               <div>
                 <h3 className="font-semibold text-lg">{selectedIcon.name}</h3>
-                <span className="text-zinc-400 text-sm capitalize">{selectedIcon.category}</span>
+                <span className="text-zinc-500 dark:text-zinc-400 text-sm capitalize">{selectedIcon.category}</span>
               </div>
             </div>
             <p className="text-zinc-500 text-xs mb-2">URL</p>
-            <div className="bg-zinc-950 rounded-lg p-3 text-xs font-mono text-zinc-400 break-all mb-4">
+            <div className="bg-zinc-100 dark:bg-zinc-950 rounded-lg p-3 text-xs font-mono text-zinc-600 dark:text-zinc-400 break-all mb-4">
               {iconUrl(selectedIcon.key)}
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -133,7 +149,7 @@ export default function Gallery() {
               </button>
               <button
                 onClick={() => setSelectedIcon(null)}
-                className="py-2 border border-zinc-700 text-zinc-400 rounded-lg text-sm hover:border-zinc-500"
+                className="py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm hover:border-zinc-400 dark:hover:border-zinc-500"
               >
                 Close
               </button>

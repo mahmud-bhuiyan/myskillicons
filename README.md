@@ -5,11 +5,11 @@ Serve skill icons as SVG via URL — with themes, sizing, batch layouts, a galle
 Embed icons in READMEs, portfolios, and docs with a single image URL.
 
 ```html
-<img src="http://localhost:5000/api/v1/icons?i=js,react,nodejs&theme=dark" />
+<img src="http://localhost:5000/icons?i=js,react,nodejs&theme=dark" />
 ```
 
 ```md
-![My Skills](http://localhost:5000/api/v1/icons?i=js,react,nodejs&theme=dark)
+![My Skills](http://localhost:5000/icons?i=js,react,nodejs&theme=dark)
 ```
 
 ---
@@ -37,7 +37,7 @@ Embed icons in READMEs, portfolios, and docs with a single image URL.
 
 ### Built-in icons
 
-`js` · `react` · `nodejs` · `python` · `mongodb` · `html` · `css` · `typescript`
+`js` · `react` · `nodejs` · `python` · `mongodb` · `html` · `css` · `typescript` · `vue` · `docker` · `git` · `github` · `express` · `nextjs` · `tailwind` · `postgresql` · `redis`
 
 ---
 
@@ -59,8 +59,7 @@ myskillicons/
 │   │   ├── middleware/     # Auth
 │   │   ├── models/
 │   │   ├── routes/
-│   │   ├── icons/          # SVG source files
-│   │   └── utils/          # SVG processor, icon registry
+│   │   └── utils/          # SVG processor, icon seed data
 │   └── .env.example
 └── skillicons-project-plan.md
 ```
@@ -97,7 +96,7 @@ JWT_SECRET=your-secret-here
 NODE_ENV=development
 ```
 
-**Client** — copy `client/.env.example` to `client/.env` (optional; Vite proxies `/api` in dev):
+**Client** — copy `client/.env.example` to `client/.env` (optional; Vite proxies `/api` and `/icons` in dev):
 
 ```env
 VITE_API_URL=/api/v1
@@ -127,27 +126,29 @@ npm run dev
 
 ---
 
-## Icon API
+## Icon API (public)
 
-Base path: `/api/v1/icons`
+Short public path — no `/api/v1` prefix:
+
+Base path: `/icons`
 
 ### Single icon
 
 ```
-GET /api/v1/icons?i=js&theme=dark&width=64&height=64
+GET /icons?i=js&theme=dark&width=64&height=64
 ```
 
 ### Batch icons
 
 ```
-GET /api/v1/icons?i=js,react,nodejs&theme=dark&layout=row&gap=8
-GET /api/v1/icons?i=js,react,nodejs,python&theme=dark&layout=grid
+GET /icons?i=js,react,nodejs&theme=dark&layout=row&gap=8
+GET /icons?i=js,react,nodejs,python&theme=dark&layout=grid
 ```
 
 ### List all icons
 
 ```
-GET /api/v1/icons/list
+GET /icons/list
 ```
 
 ### Query parameters
@@ -179,6 +180,12 @@ All under `/api/v1` unless noted.
 | `POST` | `/request/:id/upvote` | Upvote a request |
 | `POST` | `/admin/setup` | Create first admin |
 | `POST` | `/admin/login` | Admin login (JWT) |
+| `GET` | `/admin/me` | Current admin (auth) |
+| `PATCH` | `/admin/password` | Change password (auth) |
+| `GET` | `/admin/icons` | List icons in DB (auth) |
+| `POST` | `/admin/icons` | Upload/create SVG icon (auth, multipart or JSON) |
+| `PUT` | `/admin/icons/:key` | Update icon (auth) |
+| `DELETE` | `/admin/icons/:key` | Delete icon (auth) |
 | `GET` | `/admin/requests` | All requests (auth) |
 | `PATCH` | `/admin/requests/:id` | Update request status (auth) |
 
@@ -199,12 +206,21 @@ All under `/api/v1` unless noted.
 
 ## Scripts
 
+**Root**
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start server + client together |
+| `npm run seed` | Seed default icons into MongoDB |
+| `npm run build` | Build the client |
+
 **Server**
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start with nodemon |
 | `npm start` | Start production server |
+| `npm run seed` | Seed default icons into MongoDB |
 
 **Client**
 
@@ -217,10 +233,66 @@ All under `/api/v1` unless noted.
 
 ---
 
+## Seeding Icons
+
+Default icons are defined in `server/src/utils/iconSeedData.js` — each entry includes key, name, category, theme colors, tags, and full SVG markup (with `{{WIDTH}}`, `{{HEIGHT}}`, `{{COLOR_BG}}`, `{{COLOR_PRIMARY}}` placeholders). No SVG files are kept on disk.
+
+### Behavior
+
+- Inserts an icon only if its **key does not already exist** in MongoDB
+- Never overwrites or updates existing icons
+- Runs automatically when the server starts
+- Can also be run manually against local or live databases
+
+### Seed locally
+
+Make sure `server/.env` points at your local DB, then:
+
+```bash
+# from repo root
+npm run seed
+
+# or from server/
+cd server
+npm run seed
+```
+
+### Seed a live / production database
+
+1. Set `MONGO_URI` in `server/.env` to your live MongoDB Atlas (or production) URI.
+2. Run the seed command:
+
+```bash
+cd server
+npm run seed
+```
+
+3. You should see logs like:
+
+```
+Seeded N icon(s) into MongoDB
+Icon store ready: N icon(s)
+```
+
+If icons were already seeded, only the store-ready line appears (0 new inserts).
+
+### After seeding
+
+Manage icons from the admin panel (`/admin`) — upload, edit, or delete without redeploying. To add more defaults for future environments, append entries to `iconSeedData.js`.
+
+---
+
 ## Adding Icons
 
-1. Add an SVG under `server/src/icons/` using `{{COLOR_BG}}` and `{{COLOR_PRIMARY}}` placeholders.
-2. Register it in `server/src/utils/iconRegistry.js` with name, file, category, and theme colors.
+Icons are stored in **MongoDB** (`svgContent`) and served via `/icons?...`.
+
+**Admin panel (recommended)**
+
+1. Log in at `/admin/login`.
+2. Open **Icons** → **Upload icon**.
+3. Set key, name, category, theme colors, and upload/paste an SVG that uses placeholders:
+   - `{{WIDTH}}`, `{{HEIGHT}}`, `{{COLOR_BG}}`, `{{COLOR_PRIMARY}}`
+4. Users embed with `/icons?i=your-key&theme=dark&width=48`.
 
 ---
 

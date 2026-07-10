@@ -1,23 +1,21 @@
 const { processSingleIcon, processBatchIcons, validateParams, LIMITS } = require('../utils/svgProcessor');
-const iconRegistry = require('../utils/iconRegistry');
+const iconStore = require('../utils/iconStore');
 
 /**
- * GET /api/v1/icons?i=js&theme=dark&width=48&height=48
- * GET /api/v1/icons?i=js,react,nodejs&theme=dark&width=48&height=48
+ * GET /icons?i=js&theme=dark&width=48&height=48
+ * GET /icons?i=js,react,nodejs&theme=dark&width=48&height=48
  */
 const getIcons = (req, res) => {
   const { i, theme, width, height, layout, gap } = validateParams(req.query);
 
   if (!i) {
-    return res.status(400).json({ error: 'Missing required param: i (icon name or comma-separated list)' });
+    return res.status(400).json({ error: 'Missing required query param: i (icon key)' });
   }
 
-  const iconKeys = i.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
-
+  const iconKeys = i.split(',').map((k) => k.trim()).filter(Boolean);
   if (iconKeys.length === 0) {
-    return res.status(400).json({ error: 'No valid icon names provided' });
+    return res.status(400).json({ error: 'No valid icon keys provided' });
   }
-
   if (iconKeys.length > LIMITS.maxBatch) {
     return res.status(400).json({ error: `Max ${LIMITS.maxBatch} icons per request` });
   }
@@ -41,14 +39,13 @@ const getIcons = (req, res) => {
 };
 
 /**
- * GET /api/v1/icons/list — returns all available icon keys and metadata
+ * GET /icons/list — returns all available icon keys and metadata
  */
-const listIcons = (req, res) => {
-  const icons = Object.entries(iconRegistry).map(([key, meta]) => ({
-    key,
+const listIcons = (_req, res) => {
+  const icons = iconStore.getAllIcons().map((meta) => ({
+    key: meta.key,
     name: meta.name,
     category: meta.category,
-    themes: Object.keys(meta.themes),
   }));
   res.json({ total: icons.length, icons });
 };

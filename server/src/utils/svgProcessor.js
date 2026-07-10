@@ -1,10 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const NodeCache = require('node-cache');
-const iconRegistry = require('./iconRegistry');
+const iconStore = require('./iconStore');
 
 const cache = new NodeCache({ stdTTL: 3600 }); // cache 1 hour
-const ICONS_DIR = path.join(__dirname, '../icons');
 
 const DEFAULTS = {
   theme: 'dark',
@@ -18,6 +15,17 @@ const LIMITS = {
   maxBatch: 20,
 };
 
+function clearIconCache(iconKey) {
+  if (!iconKey) {
+    cache.flushAll();
+    return;
+  }
+  const prefix = `${String(iconKey).toLowerCase()}_`;
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) cache.del(key);
+  }
+}
+
 /**
  * Processes a single icon and returns SVG string
  */
@@ -26,17 +34,12 @@ function processSingleIcon(iconKey, theme, width, height) {
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  const iconMeta = iconRegistry[iconKey.toLowerCase()];
-  if (!iconMeta) return null;
+  const iconMeta = iconStore.getIcon(iconKey);
+  if (!iconMeta?.svgContent) return null;
 
-  const filePath = path.join(ICONS_DIR, iconMeta.file);
-  if (!fs.existsSync(filePath)) return null;
+  const themeColors = iconMeta.themes[theme] || iconMeta.themes.dark;
 
-  let svgContent = fs.readFileSync(filePath, 'utf-8');
-
-  const themeColors = iconMeta.themes[theme] || iconMeta.themes['dark'];
-
-  svgContent = svgContent
+  const svgContent = iconMeta.svgContent
     .replace(/\{\{WIDTH\}\}/g, width)
     .replace(/\{\{HEIGHT\}\}/g, height)
     .replace(/\{\{COLOR_BG\}\}/g, themeColors.bg)
@@ -108,4 +111,4 @@ function validateParams(query) {
   return { i, theme, width, height, layout, gap };
 }
 
-module.exports = { processSingleIcon, processBatchIcons, validateParams, LIMITS };
+module.exports = { processSingleIcon, processBatchIcons, validateParams, LIMITS, clearIconCache };

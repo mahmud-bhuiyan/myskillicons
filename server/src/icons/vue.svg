@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="{{WIDTH}}" height="{{HEIGHT}}">
-  <rect width="48" height="48" rx="8" fill="{{COLOR_BG}}"/>
-  <g transform="translate(8 8) scale(1.33333)">
-    <path fill="{{COLOR_PRIMARY}}" d="M24,1.61H14.06L12,5.16,9.94,1.61H0L12,22.39ZM12,14.08,5.16,2.23H9.59L12,6.41l2.41-4.18h4.43Z"/>
-  </g>
-</svg>
