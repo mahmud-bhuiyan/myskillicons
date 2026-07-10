@@ -68,61 +68,136 @@ myskillicons/
 
 ## Prerequisites
 
-- Node.js 18+
-- MongoDB running locally (or a MongoDB Atlas URI)
+- **Node.js 18+** ([nvm-windows](https://github.com/coreybutler/nvm-windows) or [nodejs.org](https://nodejs.org/))
+- **MongoDB** running locally, or a [MongoDB Atlas](https://www.mongodb.com/atlas) connection string
+
+Check your Node version:
+
+```bash
+node -v   # should be v18 or higher
+```
 
 ---
 
 ## Getting Started
 
-### 1. Clone and install
+Follow these steps in order from the repo root.
+
+### 1. Clone the repo
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/mahmud-bhuiyan/myskillicons.git
 cd myskillicons
-
-cd server && npm install
-cd ../client && npm install
 ```
 
-### 2. Environment variables
+### 2. Install dependencies
 
-**Server** — copy `server/.env.example` to `server/.env`:
+Install **root**, **server**, and **client** packages. Root-only `npm install` is not enough — `nodemon` and `vite` live in `server/` and `client/`.
+
+```bash
+# from repo root
+npm install
+npm run install:all
+```
+
+Or install each package manually:
+
+```bash
+npm install
+cd server && npm install && cd ..
+cd client && npm install && cd ..
+```
+
+### 3. Environment variables
+
+**Server (required)** — copy the example file and edit if needed:
+
+```bash
+cp server/.env.example server/.env
+```
+
+`server/.env` should look like:
 
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/skillicons
-JWT_SECRET=your-secret-here
-NODE_ENV=development
+ADMIN_JWT_SECRET=your-secret-here
 ```
 
-**Client** — copy `client/.env.example` to `client/.env` (optional; Vite proxies `/api` and `/icons` in dev):
+| Variable | Notes |
+|----------|--------|
+| `PORT` | API port (default `5000`) |
+| `MONGO_URI` | Local MongoDB, or your Atlas URI |
+| `ADMIN_JWT_SECRET` | Any long random string for admin auth |
+
+**Client (optional)** — Vite already proxies `/api` and `/icons` in development:
+
+```bash
+cp client/.env.example client/.env
+```
 
 ```env
 VITE_API_URL=/api/v1
 ```
 
-### 3. Run locally
+### 4. Start MongoDB
 
-Terminal 1 — API:
+Make sure MongoDB is running before starting the API.
+
+- **Local:** start the MongoDB service / `mongod`
+- **Atlas:** put your connection string in `server/.env` as `MONGO_URI`
+
+### 5. Run the app
+
+From the **repo root**, start API + frontend together:
 
 ```bash
-cd server
 npm run dev
 ```
 
-Terminal 2 — frontend:
+You should see something like:
 
-```bash
-cd client
-npm run dev
 ```
+[server] Server running on port 5000
+[client] ➜  Local:   http://localhost:5173/
+```
+
+Default icons are seeded automatically on first server start.
 
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:5173 |
 | API | http://localhost:5000 |
 | Health check | http://localhost:5000/health |
+
+**Optional — two terminals instead of one:**
+
+```bash
+# Terminal 1
+npm run dev:server
+
+# Terminal 2
+npm run dev:client
+```
+
+### 6. Quick check
+
+Open http://localhost:5173, or hit the icon API:
+
+```bash
+curl "http://localhost:5000/icons?i=js,react,nodejs&theme=dark"
+```
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `'nodemon' is not recognized` / `'vite' is not recognized` | You only installed at the root. Run `npm run install:all` from the repo root. |
+| MongoDB connection errors | Start local MongoDB, or set a valid `MONGO_URI` in `server/.env`. |
+| Port already in use | Change `PORT` in `server/.env`, or stop the process using 5000 / 5173. |
+| Frontend can't reach API | Confirm the server is on port 5000 and you're using the Vite proxy (`VITE_API_URL=/api/v1`). |
 
 ---
 
@@ -210,9 +285,14 @@ All under `/api/v1` unless noted.
 
 | Command | Description |
 |---------|-------------|
+| `npm install` | Install root tooling (`concurrently`) |
+| `npm run install:all` | Install `server/` and `client/` dependencies |
 | `npm run dev` | Start server + client together |
+| `npm run dev:server` | Start API only |
+| `npm run dev:client` | Start frontend only |
 | `npm run seed` | Seed default icons into MongoDB |
 | `npm run build` | Build the client |
+| `npm start` | Start production API (`server`) |
 
 **Server**
 

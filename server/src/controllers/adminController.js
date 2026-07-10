@@ -5,7 +5,7 @@ const multer = require('multer');
 const Admin = require('../models/Admin');
 const IconRequest = require('../models/IconRequest');
 
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+const generateToken = (id) => jwt.sign({ id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '7d' });
 
 const AVATAR_DIR = path.join(__dirname, '../../uploads/avatars');
 

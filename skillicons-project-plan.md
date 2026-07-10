@@ -104,7 +104,7 @@ npm install -D nodemon
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/skillicons
-JWT_SECRET=your_super_secret_key_change_this
+ADMIN_JWT_SECRET=your_super_secret_key_change_this
 NODE_ENV=development
 ```
 
@@ -879,7 +879,7 @@ const protect = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
     req.admin = decoded;
     next();
   } catch (err) {
@@ -897,7 +897,7 @@ const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const IconRequest = require('../models/IconRequest');
 
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+const generateToken = (id) => jwt.sign({ id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '7d' });
 
 /**
  * POST /admin/setup — Create admin account (only works if no admin exists)
@@ -2208,7 +2208,7 @@ http://localhost:5000/icons?i=js&theme=dark&width=64&height=64
 5. Start command: `npm start`
 6. Add environment variables:
    - `MONGO_URI` — your MongoDB Atlas connection string (get from https://cloud.mongodb.com)
-   - `JWT_SECRET` — a long random string
+   - `ADMIN_JWT_SECRET` — a long random string
    - `NODE_ENV` — `production`
 7. Deploy → copy the URL (e.g. `https://skillicons-api.onrender.com`)
 
