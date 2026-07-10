@@ -4,7 +4,7 @@
  * Skips icons whose keys already exist.
  */
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const connectDB = require('./config/db');
 const seedIcons = require('./utils/seedIcons');
 

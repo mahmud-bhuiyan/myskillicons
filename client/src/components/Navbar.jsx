@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { resolveServerUrl } from '../utils/serverUrl';
 
 function UserIcon({ className }) {
   return (
@@ -95,7 +96,7 @@ export default function Navbar() {
               }`}
             >
               {avatar ? (
-                <img src={avatar} alt="" className="w-full h-full object-cover" />
+                <img src={resolveServerUrl(avatar)} alt="" className="w-full h-full object-cover" />
               ) : (
                 <UserIcon className="w-4 h-4" />
               )}

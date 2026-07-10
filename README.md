@@ -104,10 +104,10 @@ cd client && npm install && cd ..
 **Server (required)** — copy the example file and edit if needed:
 
 ```bash
-cp server/.env.example server/.env.local
+cp server/.env.example server/.env
 ```
 
-`server/.env.local` should look like:
+`server/.env` should look like:
 
 ```env
 PORT=5000
@@ -136,7 +136,7 @@ VITE_API_URL=/api/v1
 Make sure MongoDB is running before starting the API.
 
 - **Local:** start the MongoDB service / `mongod`
-- **Atlas:** put your connection string in `server/.env.local` as `MONGO_URI`
+- **Atlas:** put your connection string in `server/.env` as `MONGO_URI`
 
 ### 5. Run the app
 
@@ -180,8 +180,8 @@ curl "http://localhost:5000/icons?i=js,react,nodejs&theme=dark"
 | Problem | Fix |
 |---------|-----|
 | `'nodemon' is not recognized` / `'vite' is not recognized` | Run `npm install` inside `server/` and `client/` respectively. |
-| MongoDB connection errors | Start local MongoDB, or set a valid `MONGO_URI` in `server/.env.local`. |
-| Port already in use | Change `PORT` in `server/.env.local`, or stop the process using 5000 / 5173. |
+| MongoDB connection errors | Start local MongoDB, or set a valid `MONGO_URI` in `server/.env`. |
+| Port already in use | Change `PORT` in `server/.env`, or stop the process using 5000 / 5173. |
 | Frontend can't reach API | Confirm the server is on port 5000 and you're using the Vite proxy (`VITE_API_URL=/api/v1`). |
 
 ---
@@ -300,7 +300,7 @@ Default icons are defined in `server/src/utils/iconSeedData.js` — each entry i
 
 ### Seed locally
 
-Make sure `server/.env.local` points at your local DB, then:
+Make sure `server/.env` points at your local DB, then:
 
 ```bash
 cd server
@@ -309,7 +309,7 @@ npm run seed
 
 ### Seed a live / production database
 
-1. Set `MONGO_URI` in `server/.env.local` to your live MongoDB Atlas (or production) URI.
+1. Set `MONGO_URI` in `server/.env` to your live MongoDB Atlas (or production) URI.
 2. Run the seed command:
 
 ```bash

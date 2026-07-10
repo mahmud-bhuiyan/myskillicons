@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import PasswordInput from '../components/PasswordInput';
+import { resolveServerUrl } from '../utils/serverUrl';
 
 function UserIcon({ className }) {
   return (
@@ -134,7 +135,7 @@ export default function AdminDetails() {
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full border border-zinc-300 dark:border-zinc-700 overflow-hidden bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center shrink-0">
             {avatar ? (
-              <img src={avatar} alt="" className="w-full h-full object-cover" />
+              <img src={resolveServerUrl(avatar)} alt="" className="w-full h-full object-cover" />
             ) : (
               <UserIcon className="w-8 h-8 text-zinc-500" />
             )}

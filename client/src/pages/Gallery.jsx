@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { buildIconUrl } from '../utils/serverUrl';
 
 const fieldClass =
   'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
@@ -40,7 +41,7 @@ export default function Gallery() {
   );
 
   const iconUrl = (key) =>
-    `${window.location.origin}/icons?i=${key}&theme=${theme}&width=${size}&height=${size}`;
+    buildIconUrl({ i: key, theme, width: size, height: size });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

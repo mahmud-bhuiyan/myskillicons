@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { buildIconUrl } from '../utils/serverUrl';
 
 const THEMES = ['dark', 'light', 'auto'];
 const LAYOUTS = ['row', 'grid'];
@@ -35,8 +36,7 @@ export default function Playground() {
 
   const buildUrl = () => {
     if (selected.length === 0) return '';
-    const base = `${window.location.origin}/icons`;
-    const params = new URLSearchParams({
+    return buildIconUrl({
       i: selected.join(','),
       theme,
       width: size,
@@ -44,7 +44,6 @@ export default function Playground() {
       layout,
       gap,
     });
-    return `${base}?${params}`;
   };
 
   const copyUrl = () => {
@@ -110,7 +109,7 @@ export default function Playground() {
                 }`}
               >
                 <img
-                  src={`/icons?i=${icon.key}&theme=${theme}&width=32&height=32`}
+                  src={buildIconUrl({ i: icon.key, theme, width: 32, height: 32 })}
                   width={32}
                   height={32}
                   alt={icon.name}
