@@ -3,7 +3,8 @@
  * Usage: npm run seed  (from server/)
  * Skips icons whose keys already exist.
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
 const connectDB = require('./config/db');
 const seedIcons = require('./utils/seedIcons');
 
