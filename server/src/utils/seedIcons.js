@@ -1,6 +1,7 @@
 const Icon = require('../models/Icon');
 const iconSeedData = require('./iconSeedData');
 const iconStore = require('./iconStore');
+const { syncCategoriesFromIcons } = require("./categoryService");
 
 /**
  * Seeds default icons into MongoDB when missing,
@@ -31,6 +32,13 @@ async function seedIcons() {
     console.log(`Seeded ${created} icon(s) into MongoDB`);
   }
   console.log(`Icon store ready: ${total} icon(s)`);
+
+  const categoriesCreated = await syncCategoriesFromIcons();
+  if (categoriesCreated > 0) {
+    console.log(
+      `Synced ${categoriesCreated} categor${categoriesCreated === 1 ? "y" : "ies"}`,
+    );
+  }
 }
 
 module.exports = seedIcons;

@@ -19,6 +19,10 @@ const {
   updateIcon,
   deleteIcon,
 } = require('../controllers/adminIconController');
+const {
+  listCategories,
+  updateCategoryOrder,
+} = require('../controllers/adminCategoryController');
 const { protect } = require('../middleware/authMiddleware');
 
 function handleMulter(upload) {
@@ -44,5 +48,8 @@ router.get('/icons', protect, listAdminIcons);
 router.post('/icons', protect, handleMulter(uploadSvg), createIcon);
 router.put('/icons/:key', protect, handleMulter(uploadSvg), updateIcon);
 router.delete('/icons/:key', protect, deleteIcon);
+
+router.get('/categories', protect, listCategories);
+router.put('/categories/order', protect, updateCategoryOrder);
 
 module.exports = router;

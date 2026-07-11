@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAdminData } from '../context/AdminDataContext';
 import { useIcons } from '../context/IconsContext';
@@ -11,7 +11,28 @@ const STATUS_COLORS = {
   'in-progress': 'text-blue-400 bg-blue-400/10 border-blue-800',
 };
 
-const DEFAULT_CATEGORIES = ['language', 'framework', 'runtime', 'database', 'tool', 'cloud'];
+const DEFAULT_CATEGORIES = [
+  'build',
+  'cloud',
+  'cms',
+  'database',
+  'design',
+  'devops',
+  'framework',
+  'game',
+  'hardware',
+  'ide',
+  'language',
+  'library',
+  'markup',
+  'ml',
+  'os',
+  'productivity',
+  'runtime',
+  'social',
+  'testing',
+  'tool',
+];
 
 const emptyForm = {
   key: '',
@@ -32,9 +53,14 @@ function normalizeCategory(value) {
     .replace(/\s+/g, '-');
 }
 
+function resolveTab(raw) {
+  if (raw === 'requests' || raw === 'categories') return raw;
+  return 'icons';
+}
+
 export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get('tab') === 'requests' ? 'requests' : 'icons';
+  const tab = resolveTab(searchParams.get('tab'));
 
   const [filter, setFilter] = useState('pending');
   const [updating, setUpdating] = useState(null);
@@ -43,9 +69,14 @@ export default function AdminDashboard() {
     icons,
     iconsLoading,
     iconsLoaded,
+    categories: orderedCategories,
+    categoriesLoading,
+    categoriesLoaded,
     requestsByStatus,
     requestsLoadingByStatus,
     refreshIcons,
+    refreshCategories,
+    saveCategoryOrder,
     refreshRequests,
   } = useAdminData();
   const { refresh: refreshPublicIcons } = useIcons();
@@ -54,8 +85,11 @@ export default function AdminDashboard() {
   const showIconsLoading = iconsLoading && !iconsLoaded && icons.length === 0;
   const showRequestsLoading =
     Boolean(requestsLoadingByStatus[filter]) && !Array.isArray(requestsByStatus[filter]);
+  const showCategoriesLoading =
+    categoriesLoading && !categoriesLoaded && orderedCategories.length === 0;
 
   const [iconSearch, setIconSearch] = useState('');
+  const [iconCategory, setIconCategory] = useState('all');
   const [customCategories, setCustomCategories] = useState([]);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -68,15 +102,32 @@ export default function AdminDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [categoryList, setCategoryList] = useState([]);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderMessage, setOrderMessage] = useState('');
+  const [orderError, setOrderError] = useState('');
+  const categoryListRef = useRef(categoryList);
+  categoryListRef.current = categoryList;
 
   const setTab = (next) => {
-    setSearchParams(next === 'requests' ? { tab: 'requests' } : { tab: 'icons' });
+    if (next === 'requests') setSearchParams({ tab: 'requests' });
+    else if (next === 'categories') setSearchParams({ tab: 'categories' });
+    else setSearchParams({});
   };
 
   useEffect(() => {
     if (tab === 'requests') refreshRequests(filter);
-    else refreshIcons();
-  }, [tab, filter, refreshRequests, refreshIcons]);
+    else if (tab === 'categories') refreshCategories();
+    else {
+      refreshIcons();
+      refreshCategories();
+    }
+  }, [tab, filter, refreshRequests, refreshIcons, refreshCategories]);
+
+  useEffect(() => {
+    setCategoryList(orderedCategories);
+  }, [orderedCategories]);
 
   useEffect(() => {
     if (!showForm && !deleteTarget) return;
@@ -176,7 +227,7 @@ export default function AdminDashboard() {
 
     const category = normalizeCategory(form.category);
     if (!/^[a-z0-9][a-z0-9-]*$/.test(category)) {
-      setFormError('Icon type must be lowercase alphanumeric (hyphens allowed)');
+      setFormError('Category must be lowercase alphanumeric (hyphens allowed)');
       return;
     }
 
@@ -217,6 +268,7 @@ export default function AdminDashboard() {
       }
 
       await refreshIcons();
+      refreshCategories();
       refreshPublicIcons();
       setTimeout(resetForm, 700);
     } catch (err) {
@@ -228,7 +280,7 @@ export default function AdminDashboard() {
   const handleAddCategory = () => {
     const category = normalizeCategory(newCategory);
     if (!/^[a-z0-9][a-z0-9-]*$/.test(category)) {
-      setFormError('Icon type must be lowercase alphanumeric (hyphens allowed)');
+      setFormError('Category must be lowercase alphanumeric (hyphens allowed)');
       return;
     }
     setCustomCategories((prev) =>
@@ -241,17 +293,89 @@ export default function AdminDashboard() {
   };
 
   const categoryOptions = [
-    ...new Set([
+    ...orderedCategories,
+    ...[...new Set([
       ...DEFAULT_CATEGORIES,
       ...icons.map((icon) => icon.category).filter(Boolean),
       ...customCategories,
       form.category,
-    ]),
-  ]
-    .filter((c) => c && c !== 'other')
-    .sort((a, b) => a.localeCompare(b));
+    ])].filter((c) => c && c !== 'other' && !orderedCategories.includes(c)),
+  ].filter((c) => c && c !== 'other');
+
+  const formatCategoryLabel = (slug) =>
+    String(slug)
+      .split('-')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+
+  const moveCategory = (from, to) => {
+    if (from === to || from == null || to == null) return;
+    setCategoryList((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  };
+
+  const persistCategoryOrder = async (ordered) => {
+    setSavingOrder(true);
+    setOrderError('');
+    setOrderMessage('');
+    try {
+      await saveCategoryOrder(ordered);
+      await refreshPublicIcons();
+      setOrderMessage('Order saved — gallery filters will use this sequence.');
+    } catch (err) {
+      setOrderError(err.response?.data?.error || 'Failed to save order');
+      await refreshCategories();
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  const onCategoryDragStart = (index) => {
+    setDragIndex(index);
+  };
+
+  const onCategoryDragOver = (e, index) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) return;
+    moveCategory(dragIndex, index);
+    setDragIndex(index);
+  };
+
+  const onCategoryDragEnd = async () => {
+    setDragIndex(null);
+    const ordered = categoryListRef.current;
+    if (ordered.join(',') === orderedCategories.join(',')) return;
+    await persistCategoryOrder(ordered);
+  };
+
+  const iconCategoryCounts = icons.reduce((acc, icon) => {
+    if (icon.category) {
+      acc[icon.category] = (acc[icon.category] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const iconFilterCategories = [
+    'all',
+    ...orderedCategories.filter((c) => iconCategoryCounts[c] > 0),
+    ...Object.keys(iconCategoryCounts)
+      .filter((c) => c && c !== 'other' && !orderedCategories.includes(c))
+      .sort((a, b) => a.localeCompare(b)),
+  ];
+
+  useEffect(() => {
+    if (iconCategory === 'all') return;
+    if (!icons.some((icon) => icon.category === iconCategory)) {
+      setIconCategory('all');
+    }
+  }, [icons, iconCategory]);
 
   const filteredIcons = icons.filter((icon) => {
+    if (iconCategory !== 'all' && icon.category !== iconCategory) return false;
     const q = iconSearch.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -261,6 +385,8 @@ export default function AdminDashboard() {
       (icon.tags || []).some((tag) => tag.toLowerCase().includes(q))
     );
   });
+
+  const isIconFiltered = iconCategory !== 'all' || Boolean(iconSearch.trim());
 
   const confirmDeleteIcon = async () => {
     if (!deleteTarget) return;
@@ -284,10 +410,10 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Admin</h1>
           <p className="text-zinc-500 text-sm mt-1">
-            Upload SVG icons to MongoDB and manage community requests.
+            Upload SVG icons, reorder category filters, and manage community requests.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setTab('icons')}
@@ -298,6 +424,17 @@ export default function AdminDashboard() {
             }`}
           >
             Icons
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('categories')}
+            className={`px-4 py-1.5 rounded-lg border text-sm transition-colors ${
+              tab === 'categories'
+                ? 'bg-yellow-400 text-black border-yellow-400'
+                : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
+            }`}
+          >
+            Categories
           </button>
           <button
             type="button"
@@ -319,7 +456,7 @@ export default function AdminDashboard() {
             <p className="text-zinc-500 text-sm sm:mr-auto">
               {showIconsLoading
                 ? 'Loading…'
-                : iconSearch.trim()
+                : isIconFiltered
                   ? `${filteredIcons.length} of ${icons.length} icon${icons.length === 1 ? '' : 's'}`
                   : `${icons.length} icon${icons.length === 1 ? '' : 's'} in database`}
             </p>
@@ -337,6 +474,26 @@ export default function AdminDashboard() {
             >
               Upload icon
             </button>
+          </div>
+
+          <div className="flex gap-2 flex-wrap shrink-0">
+            {iconFilterCategories.map((cat) => {
+              const count = cat === 'all' ? icons.length : (iconCategoryCounts[cat] || 0);
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setIconCategory(cat)}
+                  className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
+                    iconCategory === cat
+                      ? 'bg-yellow-400 text-black border-yellow-400'
+                      : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500'
+                  }`}
+                >
+                  {cat} ({count})
+                </button>
+              );
+            })}
           </div>
 
           {showForm && (
@@ -396,7 +553,7 @@ export default function AdminDashboard() {
                   </label>
                   <div className="space-y-1.5">
                     <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                      Type
+                      Category
                     </span>
                     {!addingCategory ? (
                       <div className="flex gap-2">
@@ -404,11 +561,11 @@ export default function AdminDashboard() {
                           className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm"
                           value={form.category}
                           onChange={(e) => setForm({ ...form, category: e.target.value })}
-                          aria-label="Icon type"
+                          aria-label="Category"
                         >
                           {categoryOptions.map((c) => (
                             <option key={c} value={c}>
-                              {c}
+                              {formatCategoryLabel(c)}
                             </option>
                           ))}
                         </select>
@@ -420,16 +577,16 @@ export default function AdminDashboard() {
                             setFormError('');
                           }}
                           className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:border-zinc-400 dark:hover:border-zinc-500 shrink-0"
-                          title="Add icon type"
+                          title="Add category"
                         >
-                          + Type
+                          + Category
                         </button>
                       </div>
                     ) : (
                       <div className="flex gap-2">
                         <input
                           className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm"
-                          placeholder="New type (e.g. devops)"
+                          placeholder="New category (e.g. devops)"
                           value={newCategory}
                           onChange={(e) => setNewCategory(e.target.value)}
                           onKeyDown={(e) => {
@@ -439,7 +596,7 @@ export default function AdminDashboard() {
                             }
                           }}
                           autoFocus
-                          aria-label="New icon type"
+                          aria-label="New category"
                         />
                         <button
                           type="button"
@@ -652,7 +809,11 @@ export default function AdminDashboard() {
             ) : icons.length === 0 ? (
               <p className="text-zinc-600">No icons in the database yet.</p>
             ) : filteredIcons.length === 0 ? (
-              <p className="text-zinc-600">No icons match “{iconSearch.trim()}”.</p>
+              <p className="text-zinc-600">
+                {iconSearch.trim()
+                  ? `No icons match “${iconSearch.trim()}”.`
+                  : `No icons in “${iconCategory}”.`}
+              </p>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3 pb-2">
                 {filteredIcons.map((icon) => (
@@ -695,6 +856,48 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+      ) : tab === 'categories' ? (
+        <div className="flex flex-col flex-1 min-h-0 gap-4">
+          <div className="shrink-0">
+            <p className="text-zinc-500 text-sm">
+              Drag categories to change the filter order on Gallery and Playground. Changes save when you drop.
+            </p>
+            {savingOrder && <p className="text-zinc-500 text-xs mt-2">Saving order…</p>}
+            {orderMessage && <p className="text-green-500 text-xs mt-2">{orderMessage}</p>}
+            {orderError && <p className="text-red-500 text-xs mt-2">{orderError}</p>}
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto slim-scroll pr-1">
+            {showCategoriesLoading ? (
+              <p className="text-zinc-500">Loading categories…</p>
+            ) : categoryList.length === 0 ? (
+              <p className="text-zinc-600">No categories yet. Add icons with a category first.</p>
+            ) : (
+              <ul className="space-y-2 pb-2 max-w-md">
+                {categoryList.map((slug, index) => (
+                  <li
+                    key={slug}
+                    draggable={!savingOrder}
+                    onDragStart={() => onCategoryDragStart(index)}
+                    onDragOver={(e) => onCategoryDragOver(e, index)}
+                    onDragEnd={onCategoryDragEnd}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border bg-white dark:bg-zinc-900 cursor-grab active:cursor-grabbing select-none transition-colors ${
+                      dragIndex === index
+                        ? 'border-yellow-400 bg-yellow-400/10'
+                        : 'border-zinc-200 dark:border-zinc-800'
+                    }`}
+                  >
+                    <span className="text-zinc-400 text-sm tabular-nums w-6">{index + 1}</span>
+                    <span className="text-zinc-500" aria-hidden>
+                      ⋮⋮
+                    </span>
+                    <span className="capitalize font-medium">{slug}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>

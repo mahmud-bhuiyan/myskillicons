@@ -23,3 +23,8 @@ Thumbs.db
 
 # Optional: uploads if you store files locally
 server/uploads/
+
+# Temporary skill-icons download artifacts (not the seed files)
+skill-icons-tmp/
+skill-icons.zip
+skill-icons-readme.md

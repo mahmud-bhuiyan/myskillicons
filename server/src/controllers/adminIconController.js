@@ -2,8 +2,9 @@ const multer = require('multer');
 const Icon = require('../models/Icon');
 const iconStore = require('../utils/iconStore');
 const { clearIconCache } = require('../utils/svgProcessor');
+const { ensureCategory, DEFAULT_ORDER } = require('../utils/categoryService');
 
-const DEFAULT_CATEGORIES = ['language', 'framework', 'runtime', 'database', 'tool', 'cloud'];
+const DEFAULT_CATEGORIES = [...DEFAULT_ORDER];
 
 function normalizeCategory(raw) {
   return String(raw || '')
@@ -170,6 +171,7 @@ const createIcon = async (req, res) => {
       isApproved: req.body.isApproved !== 'false' && req.body.isApproved !== false,
     });
 
+    await ensureCategory(category);
     syncStore(icon);
     res.status(201).json({ message: 'Icon created', icon: toAdminIcon(icon) });
   } catch (error) {
@@ -213,6 +215,7 @@ const updateIcon = async (req, res) => {
     }
 
     await icon.save();
+    if (req.body.category) await ensureCategory(icon.category);
     syncStore(icon);
     if (!icon.isApproved) {
       iconStore.removeIcon(icon.key);

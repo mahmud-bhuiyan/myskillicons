@@ -43,6 +43,7 @@ export default function Navbar() {
 
   const adminNavItems = [
     { path: '/admin?tab=icons', label: 'Icons', match: (p, search) => p === '/admin' && (!search.get('tab') || search.get('tab') === 'icons') },
+    { path: '/admin?tab=categories', label: 'Categories', match: (p, search) => p === '/admin' && search.get('tab') === 'categories' },
     { path: '/admin?tab=requests', label: 'Requests', match: (p, search) => p === '/admin' && search.get('tab') === 'requests' },
   ];
 

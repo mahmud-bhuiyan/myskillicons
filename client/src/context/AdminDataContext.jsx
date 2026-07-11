@@ -25,17 +25,26 @@ export function AdminDataProvider({ children }) {
   const [iconsLoading, setIconsLoading] = useState(false);
   const [iconsLoaded, setIconsLoaded] = useState(false);
 
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+
   const [requestsByStatus, setRequestsByStatus] = useState({});
   const [requestsLoadingByStatus, setRequestsLoadingByStatus] = useState({});
 
   const iconsRef = useRef(icons);
   const iconsLoadedRef = useRef(iconsLoaded);
+  const categoriesRef = useRef(categories);
+  const categoriesLoadedRef = useRef(categoriesLoaded);
   const requestsRef = useRef(requestsByStatus);
   const iconsInFlightRef = useRef(null);
+  const categoriesInFlightRef = useRef(null);
   const requestsInFlightRef = useRef({});
 
   iconsRef.current = icons;
   iconsLoadedRef.current = iconsLoaded;
+  categoriesRef.current = categories;
+  categoriesLoadedRef.current = categoriesLoaded;
   requestsRef.current = requestsByStatus;
 
   useEffect(() => {
@@ -43,9 +52,13 @@ export function AdminDataProvider({ children }) {
     setIcons([]);
     setIconsLoaded(false);
     setIconsLoading(false);
+    setCategories([]);
+    setCategoriesLoaded(false);
+    setCategoriesLoading(false);
     setRequestsByStatus({});
     setRequestsLoadingByStatus({});
     iconsInFlightRef.current = null;
+    categoriesInFlightRef.current = null;
     requestsInFlightRef.current = {};
   }, [token]);
 
@@ -82,6 +95,47 @@ export function AdminDataProvider({ children }) {
     iconsInFlightRef.current = request;
     return request;
   }, [token, handleAuthFailure]);
+
+  const refreshCategories = useCallback(async () => {
+    if (!token) return;
+
+    const hasCache = categoriesLoadedRef.current || categoriesRef.current.length > 0;
+    if (!hasCache) setCategoriesLoading(true);
+
+    if (categoriesInFlightRef.current) return categoriesInFlightRef.current;
+
+    const request = api
+      .get('/admin/categories')
+      .then((res) => {
+        const next = Array.isArray(res.data?.categories) ? res.data.categories : [];
+        if (next.join(',') !== categoriesRef.current.join(',')) {
+          setCategories(next);
+        }
+        setCategoriesLoaded(true);
+      })
+      .catch(() => {
+        handleAuthFailure();
+      })
+      .finally(() => {
+        setCategoriesLoading(false);
+        categoriesInFlightRef.current = null;
+      });
+
+    categoriesInFlightRef.current = request;
+    return request;
+  }, [token, handleAuthFailure]);
+
+  const saveCategoryOrder = useCallback(
+    async (ordered) => {
+      if (!token) return;
+      const res = await api.put('/admin/categories/order', { categories: ordered });
+      const next = Array.isArray(res.data?.categories) ? res.data.categories : ordered;
+      setCategories(next);
+      setCategoriesLoaded(true);
+      return next;
+    },
+    [token]
+  );
 
   const refreshRequests = useCallback(async (status) => {
     if (!token || !status) return;
@@ -131,9 +185,14 @@ export function AdminDataProvider({ children }) {
         icons,
         iconsLoading,
         iconsLoaded,
+        categories,
+        categoriesLoading,
+        categoriesLoaded,
         requestsByStatus,
         requestsLoadingByStatus,
         refreshIcons,
+        refreshCategories,
+        saveCategoryOrder,
         refreshRequests,
       }}
     >

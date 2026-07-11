@@ -14,7 +14,7 @@ const surfaceClass =
   'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800';
 
 export default function Playground() {
-  const { icons: allIcons, error: loadError, refresh } = useIcons();
+  const { icons: allIcons, categories, categoryCounts, error: loadError, refresh } = useIcons();
   const [selected, setSelected] = useState([]);
   const [theme, setTheme] = useState('light');
   const [size, setSize] = useState(48);
@@ -27,6 +27,12 @@ export default function Playground() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!categories.includes(activeCategory)) {
+      setActiveCategory('all');
+    }
+  }, [categories, activeCategory]);
 
   const toggleIcon = (key) => {
     setSelected(prev =>
@@ -51,8 +57,6 @@ export default function Playground() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const categories = ['all', ...new Set(allIcons.map(i => i.category))];
 
   const filtered = allIcons.filter(icon =>
     (activeCategory === 'all' || icon.category === activeCategory) &&
@@ -83,19 +87,22 @@ export default function Playground() {
 
           {/* Category filters */}
           <div className="flex gap-2 flex-wrap mb-4">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
-                  activeCategory === cat
-                    ? 'bg-yellow-400 text-black border-yellow-400 font-medium'
-                    : inactiveBtn
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+            {categories.map(cat => {
+              const count = categoryCounts[cat] ?? 0;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
+                    activeCategory === cat
+                      ? 'bg-yellow-400 text-black border-yellow-400 font-medium'
+                      : inactiveBtn
+                  }`}
+                >
+                  {cat} ({count})
+                </button>
+              );
+            })}
           </div>
 
           {/* Icon grid */}
