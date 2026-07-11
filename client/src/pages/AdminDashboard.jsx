@@ -82,6 +82,8 @@ export default function AdminDashboard() {
   const { refresh: refreshPublicIcons } = useIcons();
 
   const requests = requestsByStatus[filter] || [];
+  // Only show a loading placeholder on true cold start (no cache, no icons yet).
+  // Revisits / tab switches keep the existing list; API revalidates in the background.
   const showIconsLoading = iconsLoading && !iconsLoaded && icons.length === 0;
   const showRequestsLoading =
     Boolean(requestsLoadingByStatus[filter]) && !Array.isArray(requestsByStatus[filter]);
@@ -186,7 +188,7 @@ export default function AdminDashboard() {
     setShowForm(true);
   };
 
-  const openEdit = (icon) => {
+  const openEdit = async (icon) => {
     setEditingKey(icon.key);
     setForm({
       key: icon.key,
@@ -205,6 +207,21 @@ export default function AdminDashboard() {
     setAddingCategory(false);
     setNewCategory('');
     setShowForm(true);
+
+    // List API omits svgContent — load it when opening the editor.
+    if (!icon.svgContent) {
+      try {
+        const { data } = await api.get(`/admin/icons/${icon.key}`);
+        const full = data?.icon;
+        if (full?.svgContent) {
+          setForm((prev) =>
+            prev.key === icon.key ? { ...prev, svgContent: full.svgContent } : prev
+          );
+        }
+      } catch (err) {
+        setFormError(err.response?.data?.error || 'Failed to load SVG content');
+      }
+    }
   };
 
   const onFileChange = (e) => {
@@ -269,7 +286,7 @@ export default function AdminDashboard() {
 
       await refreshIcons();
       refreshCategories();
-      refreshPublicIcons();
+      refreshPublicIcons({ invalidateIcons: true });
       setTimeout(resetForm, 700);
     } catch (err) {
       setFormError(err.response?.data?.error || 'Save failed');
@@ -324,7 +341,7 @@ export default function AdminDashboard() {
     setOrderMessage('');
     try {
       await saveCategoryOrder(ordered);
-      await refreshPublicIcons();
+      await refreshPublicIcons({ invalidateIcons: true });
       setOrderMessage('Order saved — gallery filters will use this sequence.');
     } catch (err) {
       setOrderError(err.response?.data?.error || 'Failed to save order');
@@ -396,7 +413,7 @@ export default function AdminDashboard() {
       await api.delete(`/admin/icons/${key}`);
       setDeleteTarget(null);
       await refreshIcons();
-      refreshPublicIcons();
+      refreshPublicIcons({ invalidateIcons: true });
       if (editingKey === key) resetForm();
     } catch (err) {
       alert(err.response?.data?.error || 'Delete failed');

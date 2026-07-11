@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -6,6 +7,10 @@ import AppRoutes from './routes';
 export default function Layout() {
   const { pathname } = useLocation();
   const isAdminDashboard = pathname === '/admin';
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   return (
     <div

@@ -98,8 +98,8 @@ function normalizeKey(key) {
     .toLowerCase();
 }
 
-function toAdminIcon(doc) {
-  return {
+function toAdminIcon(doc, { includeSvg = true } = {}) {
+  const icon = {
     _id: doc._id,
     key: doc.key,
     name: doc.name,
@@ -107,11 +107,12 @@ function toAdminIcon(doc) {
     themes: doc.themes,
     tags: doc.tags || [],
     isApproved: doc.isApproved,
-    svgContent: doc.svgContent,
     previewUrl: `/icons?i=${doc.key}&theme=dark&width=48&height=48`,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
+  if (includeSvg) icon.svgContent = doc.svgContent;
+  return icon;
 }
 
 function syncStore(doc) {
@@ -121,11 +122,32 @@ function syncStore(doc) {
 
 /**
  * GET /api/v1/admin/icons
+ * List metadata only (no svgContent) so the admin grid stays fast.
  */
 const listAdminIcons = async (_req, res) => {
   try {
-    const icons = await Icon.find().sort({ name: 1 });
-    res.json({ total: icons.length, icons: icons.map(toAdminIcon) });
+    const icons = await Icon.find()
+      .select('-svgContent')
+      .sort({ name: 1 })
+      .lean();
+    res.json({
+      total: icons.length,
+      icons: icons.map((doc) => toAdminIcon(doc, { includeSvg: false })),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * GET /api/v1/admin/icons/:key — full icon including svgContent (for edit form)
+ */
+const getAdminIcon = async (req, res) => {
+  try {
+    const key = normalizeKey(req.params.key);
+    const icon = await Icon.findOne({ key });
+    if (!icon) return res.status(404).json({ error: 'Icon not found' });
+    res.json({ icon: toAdminIcon(icon) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -248,6 +270,7 @@ const deleteIcon = async (req, res) => {
 module.exports = {
   uploadSvg,
   listAdminIcons,
+  getAdminIcon,
   createIcon,
   updateIcon,
   deleteIcon,

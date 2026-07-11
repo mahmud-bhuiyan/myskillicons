@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useIcons } from '../context/IconsContext';
+import { useGalleryIcons } from '../hooks/useGalleryIcons';
 import { buildIconUrl } from '../utils/serverUrl';
 
-const THEMES = ['light', 'dark', 'auto'];
+const THEMES = ['light', 'dark'];
 const LAYOUTS = ['row', 'grid'];
 const SIZES = [24, 32, 48, 64, 80, 96];
 
@@ -14,19 +15,39 @@ const surfaceClass =
   'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800';
 
 export default function Playground() {
-  const { icons: allIcons, categories, categoryCounts, error: loadError, refresh } = useIcons();
+  const { categories, categoryCounts, error: catalogError, refresh } = useIcons();
   const [selected, setSelected] = useState([]);
   const [theme, setTheme] = useState('light');
   const [size, setSize] = useState(48);
   const [layout, setLayout] = useState('row');
   const [gap, setGap] = useState(8);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
+
+  const {
+    icons,
+    total,
+    loading,
+    loadingMore,
+    error: iconsError,
+    loadMore,
+    showLess,
+    hasMore,
+    canShowLess,
+  } = useGalleryIcons({ scope: 'playground', category: activeCategory, search: debouncedSearch });
+
+  const loadError = catalogError || iconsError;
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     if (!categories.includes(activeCategory)) {
@@ -35,8 +56,8 @@ export default function Playground() {
   }, [categories, activeCategory]);
 
   const toggleIcon = (key) => {
-    setSelected(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    setSelected((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
   };
 
@@ -58,10 +79,7 @@ export default function Playground() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const filtered = allIcons.filter(icon =>
-    (activeCategory === 'all' || icon.category === activeCategory) &&
-    (icon.name.toLowerCase().includes(search.toLowerCase()) || icon.key.includes(search.toLowerCase()))
-  );
+  const showInitialLoading = loading && icons.length === 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -80,14 +98,14 @@ export default function Playground() {
               type="text"
               placeholder="Search icons..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className={`flex-1 ${fieldClass}`}
             />
           </div>
 
           {/* Category filters */}
           <div className="flex gap-2 flex-wrap mb-4">
-            {categories.map(cat => {
+            {categories.map((cat) => {
               const count = categoryCounts[cat] ?? 0;
               return (
                 <button
@@ -106,29 +124,62 @@ export default function Playground() {
           </div>
 
           {/* Icon grid */}
-          <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
-            {filtered.map(icon => (
-              <button
-                key={icon.key}
-                onClick={() => toggleIcon(icon.key)}
-                title={icon.name}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
-                  selected.includes(icon.key)
-                    ? 'border-yellow-400 bg-yellow-400/10'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
-                }`}
-              >
-                <img
-                  src={buildIconUrl({ i: icon.key, theme, width: 32, height: 32 })}
-                  width={32}
-                  height={32}
-                  alt={icon.name}
-                  className="rounded"
-                />
-                <span className="text-zinc-500 text-xs truncate w-full text-center">{icon.key}</span>
-              </button>
-            ))}
-          </div>
+          {showInitialLoading ? (
+            <div className="text-zinc-500 text-center py-16">Loading icons...</div>
+          ) : icons.length === 0 ? (
+            <div className="text-zinc-500 text-center py-16">No icons found.</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+                {icons.map((icon) => (
+                  <button
+                    key={icon.key}
+                    onClick={() => toggleIcon(icon.key)}
+                    title={icon.name}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
+                      selected.includes(icon.key)
+                        ? 'border-yellow-400 bg-yellow-400/10'
+                        : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
+                    }`}
+                  >
+                    <img
+                      src={buildIconUrl({ i: icon.key, theme, width: 32, height: 32 })}
+                      width={32}
+                      height={32}
+                      alt={icon.name}
+                      className="rounded"
+                      loading="lazy"
+                    />
+                    <span className="text-zinc-500 text-xs truncate w-full text-center">{icon.key}</span>
+                  </button>
+                ))}
+              </div>
+
+              {(hasMore || canShowLess) && (
+                <div className="flex justify-center gap-3 mt-6">
+                  {canShowLess && (
+                    <button
+                      type="button"
+                      onClick={showLess}
+                      className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-500"
+                    >
+                      Show less
+                    </button>
+                  )}
+                  {hasMore && (
+                    <button
+                      type="button"
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="px-4 py-2 rounded-lg bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {loadingMore ? 'Loading...' : `Show more (${icons.length} of ${total})`}
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* RIGHT: Settings + Preview */}
@@ -139,7 +190,7 @@ export default function Playground() {
             <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Selected ({selected.length})</label>
             <div className="flex flex-wrap gap-1 min-h-8">
               {selected.length === 0 && <span className="text-zinc-500 dark:text-zinc-600 text-sm">Click icons to select</span>}
-              {selected.map(key => (
+              {selected.map((key) => (
                 <span
                   key={key}
                   onClick={() => toggleIcon(key)}
@@ -155,7 +206,7 @@ export default function Playground() {
           <div>
             <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Theme</label>
             <div className="flex gap-2">
-              {THEMES.map(t => (
+              {THEMES.map((t) => (
                 <button
                   key={t}
                   onClick={() => setTheme(t)}
@@ -173,7 +224,7 @@ export default function Playground() {
           <div>
             <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Size: {size}px</label>
             <div className="flex gap-2 flex-wrap">
-              {SIZES.map(s => (
+              {SIZES.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSize(s)}
@@ -191,7 +242,7 @@ export default function Playground() {
           <div>
             <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Layout</label>
             <div className="flex gap-2 mb-3">
-              {LAYOUTS.map(l => (
+              {LAYOUTS.map((l) => (
                 <button
                   key={l}
                   onClick={() => setLayout(l)}
@@ -206,7 +257,7 @@ export default function Playground() {
             <label className="text-xs text-zinc-500 mb-1 block">Gap: {gap}px</label>
             <input
               type="range" min={0} max={32} value={gap}
-              onChange={e => setGap(Number(e.target.value))}
+              onChange={(e) => setGap(Number(e.target.value))}
               className="w-full accent-yellow-400"
             />
           </div>

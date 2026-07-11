@@ -36,8 +36,8 @@ export default function Navbar() {
 
   const publicNavItems = [
     { path: '/', label: 'Home' },
-    { path: '/playground', label: 'Playground' },
     { path: '/gallery', label: 'Gallery' },
+    { path: '/playground', label: 'Playground' },
     { path: '/request', label: 'Request Icon' },
   ];
 
