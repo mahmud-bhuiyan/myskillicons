@@ -15,7 +15,7 @@ const LIMITS = {
   maxBatch: 20,
 };
 
-function clearIconCache(iconKey) {
+const clearIconCache = (iconKey) => {
   if (!iconKey) {
     cache.flushAll();
     return;
@@ -24,12 +24,12 @@ function clearIconCache(iconKey) {
   for (const key of cache.keys()) {
     if (key.startsWith(prefix)) cache.del(key);
   }
-}
+};
 
 /**
  * Processes a single icon and returns SVG string
  */
-function processSingleIcon(iconKey, theme, width, height) {
+const processSingleIcon = (iconKey, theme, width, height) => {
   const cacheKey = `${iconKey}_${theme}_${width}_${height}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
@@ -47,23 +47,23 @@ function processSingleIcon(iconKey, theme, width, height) {
 
   cache.set(cacheKey, svgContent);
   return svgContent;
-}
+};
 
 /**
  * Nest a single-icon SVG inside a batch canvas, preserving its viewBox so
  * icons authored at different coordinate systems (e.g. 256 vs 48) scale correctly.
  */
-function nestIconSvg(svg, x, y, width, height) {
+const nestIconSvg = (svg, x, y, width, height) => {
   const viewBoxMatch = svg.match(/viewBox="([^"]+)"/i);
   const viewBox = viewBoxMatch ? viewBoxMatch[1] : `0 0 ${width} ${height}`;
   const innerContent = svg.replace(/<svg[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
   return `<svg x="${x}" y="${y}" width="${width}" height="${height}" viewBox="${viewBox}">${innerContent}</svg>`;
-}
+};
 
 /**
  * Processes batch icons and returns combined SVG strip
  */
-function processBatchIcons(iconKeys, theme, width, height, layout = 'row', gap = 8) {
+const processBatchIcons = (iconKeys, theme, width, height, layout = 'row', gap = 8) => {
   const svgs = [];
 
   for (const key of iconKeys) {
@@ -102,9 +102,9 @@ function processBatchIcons(iconKeys, theme, width, height, layout = 'row', gap =
   });
   combined += '</svg>';
   return combined;
-}
+};
 
-function validateParams(query) {
+const validateParams = (query) => {
   let { i, theme, width, height, w, h, layout, gap } = query;
 
   width = parseInt(width || w) || DEFAULTS.width;
@@ -118,6 +118,6 @@ function validateParams(query) {
   gap = Math.min(Math.max(parseInt(gap) || 8, 0), 64);
 
   return { i, theme, width, height, layout, gap };
-}
+};
 
 module.exports = { processSingleIcon, processBatchIcons, validateParams, LIMITS, clearIconCache };

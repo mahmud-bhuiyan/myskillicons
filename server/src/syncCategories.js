@@ -20,7 +20,7 @@ const { syncCategoriesFromIcons, DEFAULT_ORDER } = require('./utils/categoryServ
 
 const SEED_PATH = path.join(__dirname, 'utils', 'iconSeedData.js');
 
-function applyMapToSeedFile() {
+const applyMapToSeedFile = () => {
   // eslint-disable-next-line import/no-dynamic-require, global-require
   const iconSeedData = require('./utils/iconSeedData');
   let changed = 0;
@@ -49,9 +49,9 @@ function applyMapToSeedFile() {
   const body = `const iconSeedData = ${JSON.stringify(iconSeedData, null, 2)};\n\nmodule.exports = iconSeedData;\n`;
   fs.writeFileSync(SEED_PATH, header + body, 'utf8');
   return { total: Object.keys(iconSeedData).length, changed };
-}
+};
 
-async function applyMapToDatabase() {
+const applyMapToDatabase = async () => {
   let updated = 0;
   let unchanged = 0;
   const counts = {};
@@ -97,7 +97,7 @@ async function applyMapToDatabase() {
     ordered,
     counts,
   };
-}
+};
 
 (async () => {
   try {

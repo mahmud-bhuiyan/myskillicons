@@ -15,7 +15,7 @@ const QUOTA_MESSAGES = {
  * Rate limit: max 5 requests per 10 minutes per client IP.
  * Logs IP, forwarded addresses, user-agent, and related headers.
  */
-function rateLimit(action = 'submit') {
+const rateLimit = (action = 'submit') => {
   return async (req, res, next) => {
     try {
       const client = getClientInfo(req);
@@ -71,6 +71,6 @@ function rateLimit(action = 'submit') {
       next();
     }
   };
-}
+};
 
 module.exports = { rateLimit, MAX_REQUESTS, WINDOW_MS };

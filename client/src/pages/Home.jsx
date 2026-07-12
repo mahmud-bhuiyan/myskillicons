@@ -8,7 +8,7 @@ const DEMO_ICONS = ['js', 'react', 'nodejs', 'python', 'mongodb', 'html', 'css',
 /** Public URL shown in copy-paste examples (not localhost). */
 const EXAMPLE_BASE = 'https://myiconixx.vercel.app';
 
-export default function Home() {
+const Home = () => {
   const { theme } = useTheme();
   const { refresh } = useIcons();
   const iconTheme = theme === 'light' ? 'light' : 'dark';
@@ -91,4 +91,6 @@ export default function Home() {
 
     </div>
   );
-}
+};
+
+export default Home;

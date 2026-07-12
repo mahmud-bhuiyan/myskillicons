@@ -8,7 +8,7 @@ import { RequestsProvider } from './context/RequestsContext';
 import { AdminDataProvider } from './context/AdminDataContext';
 import App from './Layout';
 
-export default function AppWithProviders() {
+const AppWithProviders = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -25,4 +25,6 @@ export default function AppWithProviders() {
       </AuthProvider>
     </ThemeProvider>
   );
-}
+};
+
+export default AppWithProviders;

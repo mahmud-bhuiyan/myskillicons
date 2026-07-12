@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useAdminData } from '../context/AdminDataContext';
 import { useIcons } from '../context/IconsContext';
 import ColorField from '../components/ColorField';
+import CategoryPills from '../components/CategoryPills';
+import PaginationControls from '../components/PaginationControls';
 import api from '../utils/api';
 import { resolveServerUrl } from '../utils/serverUrl';
 import { normalizeHex } from '../utils/color';
@@ -52,19 +54,19 @@ const emptyForm = {
   darkPrimary: '#FFFFFF',
 };
 
-function normalizeCategory(value) {
+const normalizeCategory = (value) => {
   return String(value || '')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '-');
-}
+};
 
-function resolveTab(raw) {
+const resolveTab = (raw) => {
   if (raw === 'requests' || raw === 'categories') return raw;
   return 'icons';
-}
+};
 
-function formsEqual(a, b) {
+const formsEqual = (a, b) => {
   if (!a || !b) return false;
   return (
     a.key === b.key &&
@@ -77,9 +79,9 @@ function formsEqual(a, b) {
     normalizeHex(a.darkBg) === normalizeHex(b.darkBg) &&
     normalizeHex(a.darkPrimary) === normalizeHex(b.darkPrimary)
   );
-}
+};
 
-export default function AdminDashboard() {
+const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
   const tab = resolveTab(searchParams.get('tab'));
 
@@ -577,25 +579,13 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap shrink-0">
-            {iconFilterCategories.map((cat) => {
-              const count = cat === 'all' ? icons.length : (iconCategoryCounts[cat] || 0);
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setIconCategory(cat)}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
-                    iconCategory === cat
-                      ? 'bg-yellow-400 text-black border-yellow-400'
-                      : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500'
-                  }`}
-                >
-                  {cat} ({count})
-                </button>
-              );
-            })}
-          </div>
+          <CategoryPills
+            categories={iconFilterCategories}
+            activeCategory={iconCategory}
+            onChange={setIconCategory}
+            getCount={(cat) => (cat === 'all' ? icons.length : (iconCategoryCounts[cat] || 0))}
+            className="flex gap-2 flex-wrap shrink-0"
+          />
 
           {showForm && (
             <div
@@ -983,28 +973,17 @@ export default function AdminDashboard() {
                   ))}
                 </div>
 
-                {(hasMoreIcons || canShowLessIcons) && (
-                  <div className="flex justify-center gap-3 mt-4 pb-2">
-                    {canShowLessIcons && (
-                      <button
-                        type="button"
-                        onClick={showLessIcons}
-                        className="px-5 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-500"
-                      >
-                        Show less
-                      </button>
-                    )}
-                    {hasMoreIcons && (
-                      <button
-                        type="button"
-                        onClick={loadMoreIcons}
-                        className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300"
-                      >
-                        Load more ({visibleIcons.length} of {filteredIcons.length})
-                      </button>
-                    )}
-                  </div>
-                )}
+                <PaginationControls
+                  canShowLess={canShowLessIcons}
+                  hasMore={hasMoreIcons}
+                  onShowLess={showLessIcons}
+                  onLoadMore={loadMoreIcons}
+                  shown={visibleIcons.length}
+                  total={filteredIcons.length}
+                  moreLabel={`Load more (${visibleIcons.length} of ${filteredIcons.length})`}
+                  className="flex justify-center gap-3 mt-4 pb-2"
+                  moreButtonClassName="px-5 py-2.5 rounded-lg bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300"
+                />
               </>
             )}
           </div>
@@ -1152,4 +1131,6 @@ export default function AdminDashboard() {
       )}
     </div>
   );
-}
+};
+
+export default AdminDashboard;

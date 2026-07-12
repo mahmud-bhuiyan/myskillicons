@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { fieldClassFull as fieldClass } from '../utils/formClasses';
 
-const fieldClass =
-  'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
-
-export default function UpvoteModal({ open, iconName, loading, onClose, onConfirm }) {
+const UpvoteModal = ({ open, iconName, loading, onClose, onConfirm }) => {
   const [email, setEmail] = useState('');
   const inputRef = useRef(null);
 
@@ -94,4 +92,6 @@ export default function UpvoteModal({ open, iconName, loading, onClose, onConfir
       </div>
     </div>
   );
-}
+};
+
+export default UpvoteModal;

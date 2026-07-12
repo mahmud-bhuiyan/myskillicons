@@ -8,7 +8,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminDetails from './pages/AdminDetails';
 
-export default function AppRoutes() {
+const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -34,4 +34,6 @@ export default function AppRoutes() {
       />
     </Routes>
   );
-}
+};
+
+export default AppRoutes;

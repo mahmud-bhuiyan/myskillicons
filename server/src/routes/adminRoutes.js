@@ -27,14 +27,14 @@ const {
 } = require('../controllers/adminCategoryController');
 const { protect } = require('../middleware/authMiddleware');
 
-function handleMulter(upload) {
+const handleMulter = (upload) => {
   return (req, res, next) => {
     upload(req, res, (err) => {
       if (err) return res.status(400).json({ error: err.message });
       next();
     });
   };
-}
+};
 
 router.post('/setup', setupAdmin);
 router.post('/login', loginAdmin);

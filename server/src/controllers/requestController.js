@@ -1,12 +1,12 @@
 const IconRequest = require('../models/IconRequest');
 
-function sanitizeRequest(doc) {
+const sanitizeRequest = (doc) => {
   if (!doc) return doc;
   const obj = doc.toObject ? doc.toObject() : { ...doc };
   delete obj.clientInfo;
   delete obj.upvotedBy;
   return obj;
-}
+};
 
 /**
  * POST /api/v1/request — Submit a new icon request

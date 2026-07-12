@@ -2,7 +2,7 @@
  * Extract client network / browser details from the request.
  * Supports proxies (Vercel, nginx) via X-Forwarded-For / X-Real-IP.
  */
-function getClientInfo(req) {
+const getClientInfo = (req) => {
   const forwarded = req.headers['x-forwarded-for'];
   const forwardedIps = typeof forwarded === 'string'
     ? forwarded.split(',').map((ip) => ip.trim()).filter(Boolean)
@@ -24,6 +24,6 @@ function getClientInfo(req) {
     referer: req.headers.referer || req.headers.referrer || '',
     acceptLanguage: req.headers['accept-language'] || '',
   };
-}
+};
 
 module.exports = { getClientInfo };

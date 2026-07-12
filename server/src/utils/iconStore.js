@@ -6,7 +6,7 @@
 const store = new Map();
 let loaded = false;
 
-function normalizeIcon(doc) {
+const normalizeIcon = (doc) => {
   const themes = doc.themes?.toObject?.() || doc.themes || {};
   return {
     key: doc.key,
@@ -21,9 +21,9 @@ function normalizeIcon(doc) {
     tags: doc.tags || [],
     isApproved: doc.isApproved !== false,
   };
-}
+};
 
-function setIcon(doc) {
+const setIcon = (doc) => {
   const icon = normalizeIcon(doc);
   if (!icon.isApproved || !icon.svgContent) {
     store.delete(icon.key);
@@ -31,25 +31,25 @@ function setIcon(doc) {
   }
   store.set(icon.key, icon);
   return icon;
-}
+};
 
-function removeIcon(key) {
+const removeIcon = (key) => {
   store.delete(String(key).toLowerCase());
-}
+};
 
-function getIcon(key) {
+const getIcon = (key) => {
   return store.get(String(key).toLowerCase()) || null;
-}
+};
 
-function getAllIcons() {
+const getAllIcons = () => {
   return Array.from(store.values()).sort((a, b) => a.name.localeCompare(b.name));
-}
+};
 
-function getKeys() {
+const getKeys = () => {
   return Array.from(store.keys());
-}
+};
 
-async function loadFromDb(IconModel) {
+const loadFromDb = async (IconModel) => {
   const docs = await IconModel.find({ isApproved: true, svgContent: { $exists: true, $ne: '' } }).lean();
   store.clear();
   for (const doc of docs) {
@@ -57,11 +57,11 @@ async function loadFromDb(IconModel) {
   }
   loaded = true;
   return store.size;
-}
+};
 
-function isLoaded() {
+const isLoaded = () => {
   return loaded;
-}
+};
 
 module.exports = {
   setIcon,

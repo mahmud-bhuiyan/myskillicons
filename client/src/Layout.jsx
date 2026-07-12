@@ -4,7 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppRoutes from './routes';
 
-export default function Layout() {
+const Layout = () => {
   const { pathname } = useLocation();
   const isAdminDashboard = pathname === '/admin';
 
@@ -25,4 +25,6 @@ export default function Layout() {
       {!isAdminDashboard && <Footer />}
     </div>
   );
-}
+};
+
+export default Layout;

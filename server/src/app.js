@@ -10,7 +10,7 @@ const seedIcons = require('./utils/seedIcons');
 
 let appPromise = null;
 
-async function createApp() {
+const createApp = async () => {
   await connectDB();
   await seedIcons();
 
@@ -43,9 +43,9 @@ async function createApp() {
   app.use('/api/v1', apiV1);
 
   return app;
-}
+};
 
-function getApp() {
+const getApp = () => {
   if (!appPromise) {
     appPromise = createApp().catch((err) => {
       // Allow the next request to retry after a failed cold start
@@ -54,10 +54,10 @@ function getApp() {
     });
   }
   return appPromise;
-}
+};
 
 /** Vercel serverless entry — Express handles the request after warm/cold init. */
-async function handler(req, res) {
+const handler = async (req, res) => {
   try {
     const app = await getApp();
     return app(req, res);
@@ -74,7 +74,7 @@ async function handler(req, res) {
       );
     }
   }
-}
+};
 
 module.exports = handler;
 module.exports.getApp = getApp;

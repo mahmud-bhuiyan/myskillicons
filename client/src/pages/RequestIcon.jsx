@@ -3,11 +3,9 @@ import { toast } from 'react-toastify';
 import { useRequests } from '../context/RequestsContext';
 import UpvoteModal from '../components/UpvoteModal';
 import api from '../utils/api';
+import { fieldClassFull as fieldClass } from '../utils/formClasses';
 
-const fieldClass =
-  'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
-
-function quotaToast(err, fallback) {
+const quotaToast = (err, fallback) => {
   const status = err.response?.status;
   const message = err.response?.data?.error || fallback;
   if (status === 429) {
@@ -15,9 +13,9 @@ function quotaToast(err, fallback) {
   } else {
     toast.error(message);
   }
-}
+};
 
-export default function RequestIcon() {
+const RequestIcon = () => {
   const { requests: existingRequests, refresh } = useRequests();
   const [form, setForm] = useState({
     iconName: '', description: '', referenceUrl: '', submitterEmail: '', submitterName: ''
@@ -181,4 +179,6 @@ export default function RequestIcon() {
       />
     </div>
   );
-}
+};
+
+export default RequestIcon;

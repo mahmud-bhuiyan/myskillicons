@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext(null);
 const STORAGE_KEY = 'ui-theme';
 
-function readStoredTheme() {
+const readStoredTheme = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
@@ -11,15 +11,15 @@ function readStoredTheme() {
     /* ignore */
   }
   return 'dark';
-}
+};
 
-function applyThemeClass(theme) {
+const applyThemeClass = (theme) => {
   const root = document.documentElement;
   root.classList.remove('light', 'dark');
   root.classList.add(theme);
-}
+};
 
-export function ThemeProvider({ children }) {
+export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(readStoredTheme);
 
   useEffect(() => {
@@ -46,8 +46,8 @@ export function ThemeProvider({ children }) {
   );
 }
 
-export function useTheme() {
+export const useTheme = () => {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
   return ctx;
-}
+};

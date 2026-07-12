@@ -8,15 +8,15 @@ const SESSION_PREFIX = 'myskillicons:gallery:v1:';
 /** Shared across mounts so tab switches / route changes stay warm. */
 const memoryCache = new Map();
 
-function cacheKey(scope, category, search) {
+const cacheKey = (scope, category, search) => {
   return `${scope || 'gallery'}::${category || 'all'}::${(search || '').trim().toLowerCase()}`;
-}
+};
 
-function fingerprint(icons, total) {
+const fingerprint = (icons, total) => {
   return `${total}|${icons.map((icon) => icon.key).join(',')}`;
-}
+};
 
-function readSession(key) {
+const readSession = (key) => {
   try {
     const raw = sessionStorage.getItem(SESSION_PREFIX + key);
     if (!raw) return null;
@@ -26,17 +26,17 @@ function readSession(key) {
   } catch {
     return null;
   }
-}
+};
 
-function writeSession(key, entry) {
+const writeSession = (key, entry) => {
   try {
     sessionStorage.setItem(SESSION_PREFIX + key, JSON.stringify(entry));
   } catch {
     // Quota / private mode — memory cache still works.
   }
-}
+};
 
-function getCached(key) {
+const getCached = (key) => {
   if (memoryCache.has(key)) return memoryCache.get(key);
   const fromSession = readSession(key);
   if (fromSession) {
@@ -44,15 +44,15 @@ function getCached(key) {
     return fromSession;
   }
   return null;
-}
+};
 
-function setCached(key, entry) {
+const setCached = (key, entry) => {
   memoryCache.set(key, entry);
   writeSession(key, entry);
-}
+};
 
 /** Call after admin publishes icons so the next browse gets fresh data. */
-export function invalidateGalleryIconsCache() {
+export const invalidateGalleryIconsCache = () => {
   memoryCache.clear();
   try {
     const toRemove = [];
@@ -64,14 +64,14 @@ export function invalidateGalleryIconsCache() {
   } catch {
     // ignore
   }
-}
+};
 
 /**
  * Paginated gallery fetch with per-tab cache + stale-while-revalidate.
  * Cached tabs show instantly (no loading spinner); API still runs in the
  * background and only updates the UI when the result actually changed.
  */
-export function useGalleryIcons({ scope = 'gallery', category = 'all', search = '' }) {
+export const useGalleryIcons = ({ scope = 'gallery', category = 'all', search = '' }) => {
   const key = cacheKey(scope, category, search);
   const cached = getCached(key);
 
@@ -220,4 +220,4 @@ export function useGalleryIcons({ scope = 'gallery', category = 'all', search = 
     canShowLess: icons.length > GALLERY_PAGE_SIZE,
     pageSize: GALLERY_PAGE_SIZE,
   };
-}
+};

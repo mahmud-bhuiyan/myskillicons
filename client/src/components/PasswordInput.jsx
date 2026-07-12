@@ -1,15 +1,15 @@
 import { useState } from 'react';
 
-function EyeIcon({ className }) {
+const EyeIcon = ({ className }) => {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
-}
+};
 
-function EyeOffIcon({ className }) {
+const EyeOffIcon = ({ className }) => {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M3 3l18 18" />
@@ -18,9 +18,9 @@ function EyeOffIcon({ className }) {
       <path d="M6.1 6.1A17.5 17.5 0 0 0 2 12s3.5 7 10 7a10.4 10.4 0 0 0 4.1-.8" />
     </svg>
   );
-}
+};
 
-export default function PasswordInput({
+const PasswordInput = ({
   value,
   onChange,
   placeholder = 'Password',
@@ -29,7 +29,7 @@ export default function PasswordInput({
   className = '',
   inputClassName = '',
   ...props
-}) {
+}) => {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -54,4 +54,6 @@ export default function PasswordInput({
       </button>
     </div>
   );
-}
+};
+
+export default PasswordInput;

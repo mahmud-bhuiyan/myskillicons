@@ -11,7 +11,7 @@ const { syncCategoriesFromIcons } = require('./categoryService');
  * - Leaves themes alone on existing icons (admin color edits stay)
  * Runs on server start and via `npm run seed` — same function, no extra seeds.
  */
-async function seedIcons() {
+const seedIcons = async () => {
   let created = 0;
   let updated = 0;
 
@@ -87,6 +87,6 @@ async function seedIcons() {
       `Synced ${categoriesCreated} categor${categoriesCreated === 1 ? 'y' : 'ies'}`,
     );
   }
-}
+};
 
 module.exports = seedIcons;

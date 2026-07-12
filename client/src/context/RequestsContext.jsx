@@ -3,13 +3,13 @@ import api from '../utils/api';
 
 const RequestsContext = createContext(null);
 
-function requestsFingerprint(requests) {
+const requestsFingerprint = (requests) => {
   return requests
     .map((req) => `${req._id}:${req.status}:${req.upvotes}:${req.iconName}`)
     .join('|');
-}
+};
 
-export function RequestsProvider({ children }) {
+export const RequestsProvider = ({ children }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const requestsRef = useRef(requests);
@@ -56,8 +56,8 @@ export function RequestsProvider({ children }) {
   );
 }
 
-export function useRequests() {
+export const useRequests = () => {
   const ctx = useContext(RequestsContext);
   if (!ctx) throw new Error('useRequests must be used within RequestsProvider');
   return ctx;
-}
+};

@@ -4,18 +4,18 @@ import { invalidateGalleryIconsCache } from '../hooks/useGalleryIcons';
 
 const IconsContext = createContext(null);
 
-function categoriesFingerprint(categories) {
+const categoriesFingerprint = (categories) => {
   return categories.join(',');
-}
+};
 
-function countsFingerprint(counts) {
+const countsFingerprint = (counts) => {
   return Object.entries(counts)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => `${key}:${value}`)
     .join('|');
-}
+};
 
-export function IconsProvider({ children }) {
+export const IconsProvider = ({ children }) => {
   const [categories, setCategories] = useState(['all']);
   const [categoryCounts, setCategoryCounts] = useState({ all: 0 });
   const [loading, setLoading] = useState(true);
@@ -85,8 +85,8 @@ export function IconsProvider({ children }) {
   );
 }
 
-export function useIcons() {
+export const useIcons = () => {
   const ctx = useContext(IconsContext);
   if (!ctx) throw new Error('useIcons must be used within IconsProvider');
   return ctx;
-}
+};

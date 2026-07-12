@@ -7,33 +7,33 @@ import {
   parseRgbChannelsToHex,
 } from '../utils/color';
 
-function sanitizeHexInput(raw) {
+const sanitizeHexInput = (raw) => {
   const s = String(raw || '').replace(/[^#0-9a-fA-F]/g, '');
   if (!s) return '';
   const body = s.replace(/#/g, '').slice(0, 6);
   return `#${body}`;
-}
+};
 
-function clampChannelDigits(raw) {
+const clampChannelDigits = (raw) => {
   const digits = String(raw || '').replace(/\D/g, '').slice(0, 3);
   if (!digits) return '';
   const n = parseInt(digits, 10);
   if (Number.isNaN(n)) return '';
   if (n > 255) return '255';
   return digits;
-}
+};
 
-function channelsFromHex(hex) {
+const channelsFromHex = (hex) => {
   const text = hexToChannelText(hex);
   const [r = '', g = '', b = ''] = text.split(',').map((p) => p.trim());
   return { r, g, b };
-}
+};
 
 /**
  * Reusable color control: swatch + hex + rgb(r, g, b) with digit-only channels.
  * Canonical value is always `#RRGGBB`.
  */
-export default function ColorField({ label, value, onChange, className = '' }) {
+const ColorField = ({ label, value, onChange, className = '' }) => {
   const safeHex = normalizeHex(value) || '#000000';
   const [hexText, setHexText] = useState(safeHex);
   const [channels, setChannels] = useState(() => channelsFromHex(safeHex));
@@ -201,4 +201,6 @@ export default function ColorField({ label, value, onChange, className = '' }) {
       </div>
     </label>
   );
-}
+};
+
+export default ColorField;

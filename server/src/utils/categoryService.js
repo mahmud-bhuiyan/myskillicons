@@ -30,7 +30,7 @@ const DEFAULT_ORDER = [
  * New slugs get appended after the current max sortOrder.
  * Safe to call on every startup.
  */
-async function syncCategoriesFromIcons() {
+const syncCategoriesFromIcons = async () => {
   const used = await Icon.distinct('category');
   const slugs = [...new Set(used.map((s) => String(s || '').trim().toLowerCase()).filter(Boolean))];
 
@@ -59,10 +59,10 @@ async function syncCategoriesFromIcons() {
     created += 1;
   }
   return created;
-}
+};
 
 /** Ensure a single category exists (e.g. when admin creates an icon with a new type). */
-async function ensureCategory(slug) {
+const ensureCategory = async (slug) => {
   const normalized = String(slug || '')
     .trim()
     .toLowerCase();
@@ -74,22 +74,22 @@ async function ensureCategory(slug) {
   const last = await Category.findOne().sort({ sortOrder: -1 }).lean();
   const sortOrder = last ? last.sortOrder + 1 : 0;
   return Category.create({ slug: normalized, sortOrder });
-}
+};
 
 /** Ordered category slugs for public + admin UIs (excludes virtual "all"). */
-async function getOrderedCategorySlugs() {
+const getOrderedCategorySlugs = async () => {
   const docs = await Category.find().sort({ sortOrder: 1, slug: 1 }).lean();
   if (docs.length > 0) return docs.map((d) => d.slug);
 
   // Fallback if Category collection is empty
   const used = await Icon.distinct('category');
   return [...new Set(used.filter(Boolean))].sort((a, b) => a.localeCompare(b));
-}
+};
 
 /**
  * Persist a new order. `slugs` must include every existing category exactly once.
  */
-async function reorderCategories(slugs) {
+const reorderCategories = async (slugs) => {
   if (!Array.isArray(slugs) || slugs.length === 0) {
     throw Object.assign(new Error('categories array is required'), { status: 400 });
   }
@@ -117,7 +117,7 @@ async function reorderCategories(slugs) {
   );
 
   return getOrderedCategorySlugs();
-}
+};
 
 module.exports = {
   DEFAULT_ORDER,

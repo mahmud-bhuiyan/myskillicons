@@ -6,15 +6,15 @@ const { ensureCategory, DEFAULT_ORDER } = require('../utils/categoryService');
 
 const DEFAULT_CATEGORIES = [...DEFAULT_ORDER];
 
-function normalizeCategory(raw) {
+const normalizeCategory = (raw) => {
   return String(raw || '')
     .trim()
     .toLowerCase();
-}
+};
 
-function isValidCategory(category) {
+const isValidCategory = (category) => {
   return /^[a-z0-9][a-z0-9-]*$/.test(category);
-}
+};
 
 const DEFAULT_THEMES = {
   light: { bg: '#F0F0F0', primary: '#181717' },
@@ -35,7 +35,7 @@ const upload = multer({
 
 const uploadSvg = upload.single('svg');
 
-function parseThemes(raw) {
+const parseThemes = (raw) => {
   if (!raw) return { ...DEFAULT_THEMES };
 
   let parsed = raw;
@@ -61,18 +61,18 @@ function parseThemes(raw) {
   };
 
   return { light, dark, auto };
-}
+};
 
-function parseTags(raw) {
+const parseTags = (raw) => {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw.map(String).map((t) => t.trim()).filter(Boolean);
   return String(raw)
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean);
-}
+};
 
-function extractSvgContent(req) {
+const extractSvgContent = (req) => {
   if (req.file?.buffer) {
     return req.file.buffer.toString('utf-8');
   }
@@ -80,9 +80,9 @@ function extractSvgContent(req) {
     return req.body.svgContent.trim();
   }
   return null;
-}
+};
 
-function validateSvg(svg) {
+const validateSvg = (svg) => {
   if (!svg || !/<svg[\s>]/i.test(svg)) {
     return 'Valid SVG content is required (must include an <svg> root)';
   }
@@ -90,15 +90,15 @@ function validateSvg(svg) {
     return 'SVG is too large (max 200KB)';
   }
   return null;
-}
+};
 
-function normalizeKey(key) {
+const normalizeKey = (key) => {
   return String(key || '')
     .trim()
     .toLowerCase();
-}
+};
 
-function toAdminIcon(doc, { includeSvg = true } = {}) {
+const toAdminIcon = (doc, { includeSvg = true } = {}) => {
   const icon = {
     _id: doc._id,
     key: doc.key,
@@ -113,12 +113,12 @@ function toAdminIcon(doc, { includeSvg = true } = {}) {
   };
   if (includeSvg) icon.svgContent = doc.svgContent;
   return icon;
-}
+};
 
-function syncStore(doc) {
+const syncStore = (doc) => {
   iconStore.setIcon(doc);
   clearIconCache(doc.key);
-}
+};
 
 /**
  * GET /api/v1/admin/icons

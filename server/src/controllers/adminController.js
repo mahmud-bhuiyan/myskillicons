@@ -8,13 +8,13 @@ const IconRequest = require('../models/IconRequest');
 
 const generateToken = (id) => jwt.sign({ id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '7d' });
 
-function safeEqual(a, b) {
+const safeEqual = (a, b) => {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
   if (bufA.length !== bufB.length) return false;
   return crypto.timingSafeEqual(bufA, bufB);
-}
+};
 
 const AVATAR_DIR = path.join(__dirname, '../../uploads/avatars');
 
@@ -40,11 +40,11 @@ const uploadAvatar = multer({
   },
 }).single('avatar');
 
-function removeAvatarFile(avatarUrl) {
+const removeAvatarFile = (avatarUrl) => {
   if (!avatarUrl || !avatarUrl.startsWith('/uploads/avatars/')) return;
   const filePath = path.join(__dirname, '../..', avatarUrl);
   fs.promises.unlink(filePath).catch(() => {});
-}
+};
 
 /**
  * POST /api/v1/admin/setup — Create admin account (only works if no admin exists).

@@ -3,7 +3,7 @@ import api from '../utils/api';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('adminToken'));
   const [username, setUsername] = useState(localStorage.getItem('adminUsername') || '');
   const [avatar, setAvatar] = useState(localStorage.getItem('adminAvatar') || '');

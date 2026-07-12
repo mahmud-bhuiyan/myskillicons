@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useIcons } from '../context/IconsContext';
 import { useGalleryIcons } from '../hooks/useGalleryIcons';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildIconUrl } from '../utils/serverUrl';
+import { fieldClass } from '../utils/formClasses';
+import CategoryPills from '../components/CategoryPills';
+import PaginationControls from '../components/PaginationControls';
 
-const fieldClass =
-  'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
-
-export default function Gallery() {
+const Gallery = () => {
   const { categories, categoryCounts, refresh: refreshCatalog } = useIcons();
   const [activeCategory, setActiveCategory] = useState('all');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search.trim(), 400);
   const [theme, setTheme] = useState('dark');
   const [size, setSize] = useState(48);
   const [selectedIcon, setSelectedIcon] = useState(null);
@@ -31,11 +32,6 @@ export default function Gallery() {
   useEffect(() => {
     refreshCatalog();
   }, [refreshCatalog]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   useEffect(() => {
     if (!categories.includes(activeCategory)) {
@@ -101,25 +97,12 @@ export default function Gallery() {
         </select>
       </div>
 
-      {/* Category tabs */}
-      <div className="flex gap-2 flex-wrap mb-6">
-        {categories.map((cat) => {
-          const count = categoryCounts[cat] ?? 0;
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
-                activeCategory === cat
-                  ? 'bg-yellow-400 text-black border-yellow-400'
-                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500'
-              }`}
-            >
-              {cat} ({count})
-            </button>
-          );
-        })}
-      </div>
+      <CategoryPills
+        categories={categories}
+        activeCategory={activeCategory}
+        onChange={setActiveCategory}
+        getCount={(cat) => categoryCounts[cat] ?? 0}
+      />
 
       {/* Grid */}
       {showInitialLoading ? (
@@ -136,7 +119,6 @@ export default function Gallery() {
                 className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all group"
               >
                 <img
-                  key={`${icon.key}-${theme}-${size}`}
                   src={iconUrl(icon.key)}
                   width={size}
                   height={size}
@@ -151,29 +133,15 @@ export default function Gallery() {
             ))}
           </div>
 
-          {(hasMore || canShowLess) && (
-            <div className="flex justify-center gap-3 mt-8">
-              {canShowLess && (
-                <button
-                  type="button"
-                  onClick={showLess}
-                  className="px-5 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-500"
-                >
-                  Show less
-                </button>
-              )}
-              {hasMore && (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {loadingMore ? 'Loading...' : `Show more (${icons.length} of ${total})`}
-                </button>
-              )}
-            </div>
-          )}
+          <PaginationControls
+            canShowLess={canShowLess}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onShowLess={showLess}
+            onLoadMore={loadMore}
+            shown={icons.length}
+            total={total}
+          />
         </>
       )}
 
@@ -191,14 +159,7 @@ export default function Gallery() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-4 mb-4">
-              <img
-                key={`modal-${selectedIcon.key}-${theme}-${size}`}
-                src={iconUrl(selectedIcon.key)}
-                width={64}
-                height={64}
-                alt={selectedIcon.name}
-                className="rounded-xl"
-              />
+              <img src={iconUrl(selectedIcon.key)} width={64} height={64} alt={selectedIcon.name} className="rounded-xl" />
               <div>
                 <h3 className="font-semibold text-lg">{selectedIcon.name}</h3>
                 <span className="text-zinc-500 dark:text-zinc-400 text-sm capitalize">{selectedIcon.category}</span>
@@ -234,4 +195,6 @@ export default function Gallery() {
       )}
     </div>
   );
-}
+};
+
+export default Gallery;

@@ -17,22 +17,22 @@ const memoryCache = {
 /** In-memory SVG markup keyed by icon key (also mirrored to localStorage on fetch/edit). */
 const memorySvgCache = new Map();
 
-function iconsFingerprint(icons) {
+const iconsFingerprint = (icons) => {
   return icons
     .map(
       (icon) =>
         `${icon.key}:${icon.name}:${icon.category}:${(icon.tags || []).join(',')}:${icon.updatedAt || ''}:${icon.previewUrl || ''}`
     )
     .join('|');
-}
+};
 
-function requestsFingerprint(requests) {
+const requestsFingerprint = (requests) => {
   return requests
     .map((req) => `${req._id}:${req.status}:${req.upvotes}:${req.adminNote || ''}:${req.updatedAt || ''}`)
     .join('|');
-}
+};
 
-function readLocal(key) {
+const readLocal = (key) => {
   try {
     const raw = localStorage.getItem(LOCAL_PREFIX + key);
     if (!raw) return null;
@@ -40,17 +40,17 @@ function readLocal(key) {
   } catch {
     return null;
   }
-}
+};
 
-function writeLocal(key, value) {
+const writeLocal = (key, value) => {
   try {
     localStorage.setItem(LOCAL_PREFIX + key, JSON.stringify(value));
   } catch {
     // Quota / private mode — memory cache still works.
   }
-}
+};
 
-function clearLocalAdminCaches() {
+const clearLocalAdminCaches = () => {
   try {
     const toRemove = [];
     for (let i = 0; i < localStorage.length; i += 1) {
@@ -71,9 +71,9 @@ function clearLocalAdminCaches() {
   } catch {
     // ignore
   }
-}
+};
 
-function getCachedIcons() {
+const getCachedIcons = () => {
   if (memoryCache.icons) return memoryCache.icons;
   const fromLocal = readLocal('icons');
   if (Array.isArray(fromLocal?.icons)) {
@@ -81,18 +81,18 @@ function getCachedIcons() {
     return fromLocal;
   }
   return null;
-}
+};
 
-function setCachedIcons(icons) {
+const setCachedIcons = (icons) => {
   // Never persist svg payloads in the list entry — keeps localStorage small.
   const entry = {
     icons: icons.map(({ svgContent, ...rest }) => rest),
   };
   memoryCache.icons = entry;
   writeLocal('icons', entry);
-}
+};
 
-function getCachedCategories() {
+const getCachedCategories = () => {
   if (memoryCache.categories) return memoryCache.categories;
   const fromLocal = readLocal('categories');
   if (Array.isArray(fromLocal?.categories)) {
@@ -100,15 +100,15 @@ function getCachedCategories() {
     return fromLocal;
   }
   return null;
-}
+};
 
-function setCachedCategories(categories) {
+const setCachedCategories = (categories) => {
   const entry = { categories };
   memoryCache.categories = entry;
   writeLocal('categories', entry);
-}
+};
 
-function getCachedRequests(status) {
+const getCachedRequests = (status) => {
   if (Array.isArray(memoryCache.requestsByStatus[status])) {
     return memoryCache.requestsByStatus[status];
   }
@@ -118,14 +118,14 @@ function getCachedRequests(status) {
     return fromLocal.requests;
   }
   return null;
-}
+};
 
-function setCachedRequests(status, requests) {
+const setCachedRequests = (status, requests) => {
   memoryCache.requestsByStatus[status] = requests;
   writeLocal(`requests:${status}`, { requests });
-}
+};
 
-function readCachedSvg(key) {
+const readCachedSvg = (key) => {
   if (!key) return null;
   if (memorySvgCache.has(key)) return memorySvgCache.get(key);
   try {
@@ -138,9 +138,9 @@ function readCachedSvg(key) {
     // ignore
   }
   return null;
-}
+};
 
-function writeCachedSvg(key, svgContent) {
+const writeCachedSvg = (key, svgContent) => {
   if (!key || typeof svgContent !== 'string') return;
   memorySvgCache.set(key, svgContent);
   try {
@@ -148,9 +148,9 @@ function writeCachedSvg(key, svgContent) {
   } catch {
     // Quota — memory still has it for this session.
   }
-}
+};
 
-function removeCachedSvg(key) {
+const removeCachedSvg = (key) => {
   if (!key) return;
   memorySvgCache.delete(key);
   try {
@@ -158,27 +158,27 @@ function removeCachedSvg(key) {
   } catch {
     // ignore
   }
-}
+};
 
-function clearAdminCaches() {
+const clearAdminCaches = () => {
   memoryCache.icons = null;
   memoryCache.categories = null;
   memoryCache.requestsByStatus = {};
   memorySvgCache.clear();
   clearLocalAdminCaches();
-}
+};
 
 /** Attach any known SVG markup onto list items without persisting it in the list blob. */
-function hydrateIconsWithSvg(icons) {
+const hydrateIconsWithSvg = (icons) => {
   return icons.map((icon) => {
     const svg = readCachedSvg(icon.key);
     if (svg && !icon.svgContent) return { ...icon, svgContent: svg };
     if (icon.svgContent) writeCachedSvg(icon.key, icon.svgContent);
     return icon;
   });
-}
+};
 
-export function AdminDataProvider({ children }) {
+export const AdminDataProvider = ({ children }) => {
   const { token, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -586,8 +586,8 @@ export function AdminDataProvider({ children }) {
   );
 }
 
-export function useAdminData() {
+export const useAdminData = () => {
   const ctx = useContext(AdminDataContext);
   if (!ctx) throw new Error('useAdminData must be used within AdminDataProvider');
   return ctx;
-}
+};

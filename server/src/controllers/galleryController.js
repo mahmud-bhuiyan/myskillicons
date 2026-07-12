@@ -2,9 +2,9 @@ const Icon = require('../models/Icon');
 const iconStore = require('../utils/iconStore');
 const { getOrderedCategorySlugs } = require('../utils/categoryService');
 
-function escapeRegex(value) {
+const escapeRegex = (value) => {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+};
 
 /**
  * GET /api/v1/gallery — Paginated icons from MongoDB (supports category + search)

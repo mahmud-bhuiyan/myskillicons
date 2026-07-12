@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import PasswordInput from '../components/PasswordInput';
 
-export default function AdminLogin() {
+const AdminLogin = () => {
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,4 +57,6 @@ export default function AdminLogin() {
       </div>
     </div>
   );
-}
+};
+
+export default AdminLogin;

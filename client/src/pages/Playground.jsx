@@ -1,20 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useIcons } from '../context/IconsContext';
 import { useGalleryIcons } from '../hooks/useGalleryIcons';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildIconUrl } from '../utils/serverUrl';
+import { fieldClass } from '../utils/formClasses';
+import CategoryPills from '../components/CategoryPills';
+import PaginationControls from '../components/PaginationControls';
 
 const THEMES = ['dark', 'light'];
 const LAYOUTS = ['row', 'grid'];
 const SIZES = [24, 32, 48, 64, 80, 96];
 
-const fieldClass =
-  'bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
 const inactiveBtn =
   'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500';
 const surfaceClass =
   'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800';
 
-export default function Playground() {
+const playgroundLessBtn =
+  'px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-500';
+const playgroundMoreBtn =
+  'px-4 py-2 rounded-lg bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300 disabled:opacity-60 disabled:cursor-not-allowed';
+
+const Playground = () => {
   const { categories, categoryCounts, error: catalogError, refresh } = useIcons();
   const [selected, setSelected] = useState([]);
   const [theme, setTheme] = useState('dark');
@@ -22,7 +29,7 @@ export default function Playground() {
   const [layout, setLayout] = useState('row');
   const [gap, setGap] = useState(8);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search.trim(), 400);
   const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -43,11 +50,6 @@ export default function Playground() {
   useEffect(() => {
     refresh();
   }, [refresh]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 400);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   useEffect(() => {
     if (!categories.includes(activeCategory)) {
@@ -103,25 +105,14 @@ export default function Playground() {
             />
           </div>
 
-          {/* Category filters */}
-          <div className="flex gap-2 flex-wrap mb-4">
-            {categories.map((cat) => {
-              const count = categoryCounts[cat] ?? 0;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
-                    activeCategory === cat
-                      ? 'bg-yellow-400 text-black border-yellow-400 font-medium'
-                      : inactiveBtn
-                  }`}
-                >
-                  {cat} ({count})
-                </button>
-              );
-            })}
-          </div>
+          <CategoryPills
+            categories={categories}
+            activeCategory={activeCategory}
+            onChange={setActiveCategory}
+            getCount={(cat) => categoryCounts[cat] ?? 0}
+            className="flex gap-2 flex-wrap mb-4"
+            activeClassName="bg-yellow-400 text-black border-yellow-400 font-medium"
+          />
 
           {/* Icon grid */}
           {showInitialLoading ? (
@@ -143,7 +134,6 @@ export default function Playground() {
                     }`}
                   >
                     <img
-                      key={`${icon.key}-${theme}`}
                       src={buildIconUrl({ i: icon.key, theme, width: 32, height: 32 })}
                       width={32}
                       height={32}
@@ -156,29 +146,18 @@ export default function Playground() {
                 ))}
               </div>
 
-              {(hasMore || canShowLess) && (
-                <div className="flex justify-center gap-3 mt-6">
-                  {canShowLess && (
-                    <button
-                      type="button"
-                      onClick={showLess}
-                      className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-500"
-                    >
-                      Show less
-                    </button>
-                  )}
-                  {hasMore && (
-                    <button
-                      type="button"
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                      className="px-4 py-2 rounded-lg bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {loadingMore ? 'Loading...' : `Show more (${icons.length} of ${total})`}
-                    </button>
-                  )}
-                </div>
-              )}
+              <PaginationControls
+                canShowLess={canShowLess}
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+                onShowLess={showLess}
+                onLoadMore={loadMore}
+                shown={icons.length}
+                total={total}
+                className="flex justify-center gap-3 mt-6"
+                lessButtonClassName={playgroundLessBtn}
+                moreButtonClassName={playgroundMoreBtn}
+              />
             </>
           )}
         </div>
@@ -317,4 +296,6 @@ export default function Playground() {
       </div>
     </div>
   );
-}
+};
+
+export default Playground;
