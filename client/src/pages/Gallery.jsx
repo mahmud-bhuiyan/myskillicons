@@ -136,6 +136,7 @@ export default function Gallery() {
                 className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all group"
               >
                 <img
+                  key={`${icon.key}-${theme}-${size}`}
                   src={iconUrl(icon.key)}
                   width={size}
                   height={size}
@@ -190,7 +191,14 @@ export default function Gallery() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-4 mb-4">
-              <img src={iconUrl(selectedIcon.key)} width={64} height={64} alt={selectedIcon.name} className="rounded-xl" />
+              <img
+                key={`modal-${selectedIcon.key}-${theme}-${size}`}
+                src={iconUrl(selectedIcon.key)}
+                width={64}
+                height={64}
+                alt={selectedIcon.name}
+                className="rounded-xl"
+              />
               <div>
                 <h3 className="font-semibold text-lg">{selectedIcon.name}</h3>
                 <span className="text-zinc-500 dark:text-zinc-400 text-sm capitalize">{selectedIcon.category}</span>

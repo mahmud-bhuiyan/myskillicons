@@ -143,6 +143,7 @@ export default function Playground() {
                     }`}
                   >
                     <img
+                      key={`${icon.key}-${theme}`}
                       src={buildIconUrl({ i: icon.key, theme, width: 32, height: 32 })}
                       width={32}
                       height={32}
