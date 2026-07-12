@@ -51,17 +51,6 @@ export default function RequestIcon() {
       <form onSubmit={handleSubmit} className="space-y-4 mb-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-zinc-500 mb-1 block">Icon Name *</label>
-            <input
-              required
-              type="text"
-              placeholder="e.g. Vue.js"
-              value={form.iconName}
-              onChange={e => setForm({ ...form, iconName: e.target.value })}
-              className={fieldClass}
-            />
-          </div>
-          <div>
             <label className="text-xs text-zinc-500 mb-1 block">Your Name</label>
             <input
               type="text"
@@ -71,16 +60,27 @@ export default function RequestIcon() {
               className={fieldClass}
             />
           </div>
+          <div>
+            <label className="text-xs text-zinc-500 mb-1 block">Your Email *</label>
+            <input
+              required
+              type="email"
+              placeholder="dev@example.com"
+              value={form.submitterEmail}
+              onChange={e => setForm({ ...form, submitterEmail: e.target.value })}
+              className={fieldClass}
+            />
+          </div>
         </div>
 
         <div>
-          <label className="text-xs text-zinc-500 mb-1 block">Your Email *</label>
+          <label className="text-xs text-zinc-500 mb-1 block">Icon Name *</label>
           <input
             required
-            type="email"
-            placeholder="dev@example.com"
-            value={form.submitterEmail}
-            onChange={e => setForm({ ...form, submitterEmail: e.target.value })}
+            type="text"
+            placeholder="e.g. Vue.js"
+            value={form.iconName}
+            onChange={e => setForm({ ...form, iconName: e.target.value })}
             className={fieldClass}
           />
         </div>

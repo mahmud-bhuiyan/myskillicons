@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAdminData } from '../context/AdminDataContext';
 import { useIcons } from '../context/IconsContext';
 import api from '../utils/api';
+import { resolveServerUrl } from '../utils/serverUrl';
 
 const STATUS_COLORS = {
   pending: 'text-yellow-400 bg-yellow-400/10 border-yellow-800',
@@ -839,7 +840,7 @@ export default function AdminDashboard() {
                     className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex gap-4"
                   >
                     <img
-                      src={icon.previewUrl}
+                      src={resolveServerUrl(icon.previewUrl)}
                       alt={icon.name}
                       width={48}
                       height={48}

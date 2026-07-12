@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import PasswordInput from '../components/PasswordInput';
@@ -17,8 +16,7 @@ function UserIcon({ className }) {
 const emptyPasswords = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
 export default function AdminDetails() {
-  const { username, avatar, updateProfile, logout } = useAuth();
-  const navigate = useNavigate();
+  const { username, avatar, updateProfile } = useAuth();
   const fileInputRef = useRef(null);
 
   const [name, setName] = useState(username || '');
@@ -114,11 +112,6 @@ export default function AdminDetails() {
       setPwError(err.response?.data?.error || 'Failed to update password');
     }
     setPwLoading(false);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
   };
 
   return (
@@ -227,14 +220,6 @@ export default function AdminDetails() {
           </button>
         </form>
       </section>
-
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="w-full py-2.5 text-sm border border-red-900/60 text-red-400 rounded-xl hover:bg-red-950/40 transition-colors"
-      >
-        Logout
-      </button>
     </div>
   );
 }
