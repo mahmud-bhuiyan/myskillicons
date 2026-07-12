@@ -35,6 +35,9 @@ const DEFAULT_CATEGORIES = [
   'tool',
 ];
 
+/** Visible icons per "page" — each card also hits /icons?i=… for its thumbnail. */
+const ADMIN_ICONS_PAGE_SIZE = 20;
+
 const emptyForm = {
   key: '',
   name: '',
@@ -60,7 +63,7 @@ function resolveTab(raw) {
 }
 
 export default function AdminDashboard() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const tab = resolveTab(searchParams.get('tab'));
 
   const [filter, setFilter] = useState('pending');
@@ -79,6 +82,11 @@ export default function AdminDashboard() {
     refreshCategories,
     saveCategoryOrder,
     refreshRequests,
+    cacheIconSvg,
+    getIconSvg,
+    removeIconFromCache,
+    prefetchIconDetails,
+    prefetchIconsDetails,
   } = useAdminData();
   const { refresh: refreshPublicIcons } = useIcons();
 
@@ -93,6 +101,7 @@ export default function AdminDashboard() {
 
   const [iconSearch, setIconSearch] = useState('');
   const [iconCategory, setIconCategory] = useState('all');
+  const [visibleCount, setVisibleCount] = useState(ADMIN_ICONS_PAGE_SIZE);
   const [customCategories, setCustomCategories] = useState([]);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -103,6 +112,7 @@ export default function AdminDashboard() {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editPreviewUrl, setEditPreviewUrl] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [categoryList, setCategoryList] = useState([]);
@@ -112,12 +122,6 @@ export default function AdminDashboard() {
   const [orderError, setOrderError] = useState('');
   const categoryListRef = useRef(categoryList);
   categoryListRef.current = categoryList;
-
-  const setTab = (next) => {
-    if (next === 'requests') setSearchParams({ tab: 'requests' });
-    else if (next === 'categories') setSearchParams({ tab: 'categories' });
-    else setSearchParams({});
-  };
 
   useEffect(() => {
     if (tab === 'requests') refreshRequests(filter);
@@ -171,6 +175,7 @@ export default function AdminDashboard() {
     setForm(emptyForm);
     setSvgFile(null);
     setEditingKey(null);
+    setEditPreviewUrl('');
     setFormError('');
     setFormSuccess('');
     setAddingCategory(false);
@@ -182,6 +187,7 @@ export default function AdminDashboard() {
     setForm(emptyForm);
     setSvgFile(null);
     setEditingKey(null);
+    setEditPreviewUrl('');
     setFormError('');
     setFormSuccess('');
     setAddingCategory(false);
@@ -189,19 +195,28 @@ export default function AdminDashboard() {
     setShowForm(true);
   };
 
-  const openEdit = async (icon) => {
-    setEditingKey(icon.key);
-    setForm({
-      key: icon.key,
-      name: icon.name,
-      category: icon.category === 'other' ? 'tool' : icon.category,
-      tags: (icon.tags || []).join(', '),
-      svgContent: icon.svgContent || '',
-      lightBg: icon.themes?.light?.bg || '#F0F0F0',
-      lightPrimary: icon.themes?.light?.primary || '#181717',
-      darkBg: icon.themes?.dark?.bg || '#181717',
-      darkPrimary: icon.themes?.dark?.primary || '#FFFFFF',
-    });
+  const openEdit = (icon) => {
+    // Always prefer the latest hydrated entry from context (category tabs share the same list).
+    const latest = icons.find((item) => item.key === icon.key) || icon;
+    const cachedSvg = latest.svgContent || getIconSvg(latest.key) || '';
+    const previewUrl =
+      latest.previewUrl || `/icons?i=${latest.key}&theme=dark&width=48&height=48`;
+
+    const nextForm = {
+      key: latest.key,
+      name: latest.name,
+      category: latest.category === 'other' ? 'tool' : latest.category,
+      tags: (latest.tags || []).join(', '),
+      svgContent: cachedSvg,
+      lightBg: latest.themes?.light?.bg || '#F0F0F0',
+      lightPrimary: latest.themes?.light?.primary || '#181717',
+      darkBg: latest.themes?.dark?.bg || '#181717',
+      darkPrimary: latest.themes?.dark?.primary || '#FFFFFF',
+    };
+
+    setEditingKey(latest.key);
+    setEditPreviewUrl(previewUrl);
+    setForm(nextForm);
     setSvgFile(null);
     setFormError('');
     setFormSuccess('');
@@ -209,21 +224,57 @@ export default function AdminDashboard() {
     setNewCategory('');
     setShowForm(true);
 
-    // List API omits svgContent — load it when opening the editor.
-    if (!icon.svgContent) {
-      try {
-        const { data } = await api.get(`/admin/icons/${icon.key}`);
-        const full = data?.icon;
-        if (full?.svgContent) {
-          setForm((prev) =>
-            prev.key === icon.key ? { ...prev, svgContent: full.svgContent } : prev
-          );
+    // Silent revalidate — only patch fields that actually changed.
+    prefetchIconDetails(latest.key, { force: true }).then((full) => {
+      if (!full) return;
+      if (full.previewUrl) setEditPreviewUrl(full.previewUrl);
+      setForm((prev) => {
+        if (prev.key !== latest.key) return prev;
+        const patched = {
+          ...prev,
+          name: full.name ?? prev.name,
+          category:
+            full.category === 'other' ? 'tool' : full.category || prev.category,
+          tags: Array.isArray(full.tags) ? full.tags.join(', ') : prev.tags,
+          svgContent: full.svgContent ?? prev.svgContent,
+          lightBg: full.themes?.light?.bg || prev.lightBg,
+          lightPrimary: full.themes?.light?.primary || prev.lightPrimary,
+          darkBg: full.themes?.dark?.bg || prev.darkBg,
+          darkPrimary: full.themes?.dark?.primary || prev.darkPrimary,
+        };
+        if (
+          patched.name === prev.name &&
+          patched.category === prev.category &&
+          patched.tags === prev.tags &&
+          patched.svgContent === prev.svgContent &&
+          patched.lightBg === prev.lightBg &&
+          patched.lightPrimary === prev.lightPrimary &&
+          patched.darkBg === prev.darkBg &&
+          patched.darkPrimary === prev.darkPrimary
+        ) {
+          return prev;
         }
-      } catch (err) {
-        setFormError(err.response?.data?.error || 'Failed to load SVG content');
-      }
-    }
+        return patched;
+      });
+    });
   };
+
+  // If batch prefetch finishes while the edit modal is open, fill empty SVG only.
+  useEffect(() => {
+    if (!showForm || !editingKey) return;
+    const latest = icons.find((item) => item.key === editingKey);
+    if (!latest) return;
+
+    if (latest.previewUrl) {
+      setEditPreviewUrl((prev) => prev || latest.previewUrl);
+    }
+    if (!latest.svgContent) return;
+
+    setForm((prev) => {
+      if (prev.key !== editingKey || prev.svgContent) return prev;
+      return { ...prev, svgContent: latest.svgContent };
+    });
+  }, [icons, editingKey, showForm]);
 
   const onFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -273,10 +324,13 @@ export default function AdminDashboard() {
 
       if (editingKey) {
         await api.put(`/admin/icons/${editingKey}`, body);
+        if (form.svgContent.trim()) cacheIconSvg(editingKey, form.svgContent.trim());
         setFormSuccess(`Updated "${editingKey}"`);
       } else {
+        const createdKey = form.key.trim().toLowerCase();
         await api.post('/admin/icons', body);
-        setFormSuccess(`Created "${form.key.trim().toLowerCase()}"`);
+        if (form.svgContent.trim()) cacheIconSvg(createdKey, form.svgContent.trim());
+        setFormSuccess(`Created "${createdKey}"`);
       }
 
       if (!DEFAULT_CATEGORIES.includes(category)) {
@@ -404,6 +458,33 @@ export default function AdminDashboard() {
     );
   });
 
+  useEffect(() => {
+    setVisibleCount(ADMIN_ICONS_PAGE_SIZE);
+  }, [iconCategory, iconSearch]);
+
+  const visibleIcons = filteredIcons.slice(0, visibleCount);
+  const hasMoreIcons = visibleCount < filteredIcons.length;
+  const canShowLessIcons = visibleCount > ADMIN_ICONS_PAGE_SIZE;
+  const visibleIconKeys = visibleIcons.map((icon) => icon.key).join(',');
+
+  // Warm SVG cache for visible cards so Edit opens fully prefilled (no wait).
+  useEffect(() => {
+    if (tab !== 'icons' || !visibleIconKeys) return;
+    prefetchIconsDetails(visibleIconKeys.split(','));
+  }, [tab, visibleIconKeys, prefetchIconsDetails]);
+
+  const loadMoreIcons = () => {
+    setVisibleCount((count) =>
+      Math.min(count + ADMIN_ICONS_PAGE_SIZE, filteredIcons.length)
+    );
+  };
+
+  const showLessIcons = () => {
+    setVisibleCount((count) =>
+      Math.max(ADMIN_ICONS_PAGE_SIZE, count - ADMIN_ICONS_PAGE_SIZE)
+    );
+  };
+
   const isIconFiltered = iconCategory !== 'all' || Boolean(iconSearch.trim());
 
   const confirmDeleteIcon = async () => {
@@ -413,6 +494,7 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/admin/icons/${key}`);
       setDeleteTarget(null);
+      removeIconFromCache(key);
       await refreshIcons();
       refreshPublicIcons({ invalidateIcons: true });
       if (editingKey === key) resetForm();
@@ -431,41 +513,15 @@ export default function AdminDashboard() {
             Upload SVG icons, reorder category filters, and manage community requests.
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        {tab === 'icons' && (
           <button
             type="button"
-            onClick={() => setTab('icons')}
-            className={`px-4 py-1.5 rounded-lg border text-sm transition-colors ${
-              tab === 'icons'
-                ? 'bg-yellow-400 text-black border-yellow-400'
-                : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
-            }`}
+            onClick={openCreate}
+            className="px-4 py-2 text-sm bg-yellow-400 text-black font-medium rounded-lg hover:bg-yellow-300 transition-colors shrink-0 self-start sm:self-auto"
           >
-            Icons
+            Upload icon
           </button>
-          <button
-            type="button"
-            onClick={() => setTab('categories')}
-            className={`px-4 py-1.5 rounded-lg border text-sm transition-colors ${
-              tab === 'categories'
-                ? 'bg-yellow-400 text-black border-yellow-400'
-                : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
-            }`}
-          >
-            Categories
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('requests')}
-            className={`px-4 py-1.5 rounded-lg border text-sm transition-colors ${
-              tab === 'requests'
-                ? 'bg-yellow-400 text-black border-yellow-400'
-                : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
-            }`}
-          >
-            Requests
-          </button>
-        </div>
+        )}
       </div>
 
       {tab === 'icons' ? (
@@ -478,20 +534,24 @@ export default function AdminDashboard() {
                   ? `${filteredIcons.length} of ${icons.length} icon${icons.length === 1 ? '' : 's'}`
                   : `${icons.length} icon${icons.length === 1 ? '' : 's'} in database`}
             </p>
-            <input
-              type="text"
-              placeholder="Search icons..."
-              value={iconSearch}
-              onChange={(e) => setIconSearch(e.target.value)}
-              className="w-full sm:w-56 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400"
-            />
-            <button
-              type="button"
-              onClick={openCreate}
-              className="px-4 py-2 text-sm bg-yellow-400 text-black font-medium rounded-lg hover:bg-yellow-300 transition-colors shrink-0"
-            >
-              Upload icon
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Search icons..."
+                value={iconSearch}
+                onChange={(e) => setIconSearch(e.target.value)}
+                className="w-full sm:w-56 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400"
+              />
+              {iconSearch && (
+                <button
+                  type="button"
+                  onClick={() => setIconSearch('')}
+                  className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-zinc-500 shrink-0"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-2 flex-wrap shrink-0">
@@ -527,16 +587,47 @@ export default function AdminDashboard() {
                 onClick={(e) => e.stopPropagation()}
                 className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-5 space-y-4 w-full max-w-2xl my-4 sm:my-8 shadow-xl"
               >
-                <h2 id="icon-form-title" className="font-semibold text-lg">
-                  {editingKey ? `Edit “${editingKey}”` : 'Upload new icon'}
-                </h2>
-                <p className="text-zinc-500 text-xs">
-                  SVG should use placeholders{' '}
-                  <code className="text-zinc-700 dark:text-zinc-300">{'{{WIDTH}}'}</code>,{' '}
-                  <code className="text-zinc-700 dark:text-zinc-300">{'{{HEIGHT}}'}</code>,{' '}
-                  <code className="text-zinc-700 dark:text-zinc-300">{'{{COLOR_BG}}'}</code>,{' '}
-                  <code className="text-zinc-700 dark:text-zinc-300">{'{{COLOR_PRIMARY}}'}</code> for theming.
-                </p>
+                <div className="flex items-start gap-3">
+                  {(editingKey || form.svgContent || editPreviewUrl) && (
+                    <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center shrink-0 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+                      {form.svgContent ? (
+                        <div
+                          className="w-12 h-12 flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full"
+                          dangerouslySetInnerHTML={{
+                            __html: form.svgContent
+                              .replace(/\{\{WIDTH\}\}/g, '48')
+                              .replace(/\{\{HEIGHT\}\}/g, '48')
+                              .replace(/\{\{COLOR_BG\}\}/g, form.darkBg)
+                              .replace(/\{\{COLOR_PRIMARY\}\}/g, form.darkPrimary),
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={resolveServerUrl(
+                            editPreviewUrl ||
+                              `/icons?i=${editingKey || form.key}&theme=dark&width=48&height=48`
+                          )}
+                          alt={form.name || editingKey || 'Icon'}
+                          width={48}
+                          height={48}
+                          className="w-12 h-12"
+                        />
+                      )}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h2 id="icon-form-title" className="font-semibold text-lg">
+                      {editingKey ? `Edit “${editingKey}”` : 'Upload new icon'}
+                    </h2>
+                    <p className="text-zinc-500 text-xs mt-1">
+                      SVG should use placeholders{' '}
+                      <code className="text-zinc-700 dark:text-zinc-300">{'{{WIDTH}}'}</code>,{' '}
+                      <code className="text-zinc-700 dark:text-zinc-300">{'{{HEIGHT}}'}</code>,{' '}
+                      <code className="text-zinc-700 dark:text-zinc-300">{'{{COLOR_BG}}'}</code>,{' '}
+                      <code className="text-zinc-700 dark:text-zinc-300">{'{{COLOR_PRIMARY}}'}</code> for theming.
+                    </p>
+                  </div>
+                </div>
 
                 <div className="grid sm:grid-cols-2 gap-3">
                   <label className="block space-y-1.5">
@@ -730,9 +821,9 @@ export default function AdminDashboard() {
 
                 {form.svgContent && (
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-zinc-500">Preview</span>
+                    <span className="text-xs text-zinc-500">Live preview</span>
                     <div
-                      className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center"
+                      className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
                       dangerouslySetInnerHTML={{
                         __html: form.svgContent
                           .replace(/\{\{WIDTH\}\}/g, '48')
@@ -833,47 +924,73 @@ export default function AdminDashboard() {
                   : `No icons in “${iconCategory}”.`}
               </p>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-3 pb-2">
-                {filteredIcons.map((icon) => (
-                  <div
-                    key={icon.key}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex gap-4"
-                  >
-                    <img
-                      src={resolveServerUrl(icon.previewUrl)}
-                      alt={icon.name}
-                      width={48}
-                      height={48}
-                      className="rounded-lg shrink-0 self-start w-12 h-12"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold truncate">{icon.name}</h3>
-                        <span className="text-xs text-zinc-500 capitalize">{icon.category}</span>
-                      </div>
-                      <p className="text-xs text-zinc-500 font-mono mt-0.5">
-                        /icons?i={icon.key}
-                      </p>
-                      <div className="flex gap-2 mt-3">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(icon)}
-                          className="px-2.5 py-1 text-xs border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:border-zinc-400 dark:hover:border-zinc-500"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(icon)}
-                          className="px-2.5 py-1 text-xs border border-red-900 text-red-400 rounded-lg hover:bg-red-950/40"
-                        >
-                          Delete
-                        </button>
+              <>
+                <div className="grid sm:grid-cols-2 gap-3 pb-2">
+                  {visibleIcons.map((icon) => (
+                    <div
+                      key={icon.key}
+                      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex gap-4"
+                    >
+                      <img
+                        src={resolveServerUrl(icon.previewUrl)}
+                        alt={icon.name}
+                        width={48}
+                        height={48}
+                        className="rounded-lg shrink-0 self-start w-12 h-12"
+                        loading="lazy"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold truncate">{icon.name}</h3>
+                          <span className="text-xs text-zinc-500 capitalize">{icon.category}</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 font-mono mt-0.5">
+                          /icons?i={icon.key}
+                        </p>
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(icon)}
+                            className="px-2.5 py-1 text-xs border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:border-zinc-400 dark:hover:border-zinc-500"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(icon)}
+                            className="px-2.5 py-1 text-xs border border-red-900 text-red-400 rounded-lg hover:bg-red-950/40"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {(hasMoreIcons || canShowLessIcons) && (
+                  <div className="flex justify-center gap-3 mt-4 pb-2">
+                    {canShowLessIcons && (
+                      <button
+                        type="button"
+                        onClick={showLessIcons}
+                        className="px-5 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-500"
+                      >
+                        Show less
+                      </button>
+                    )}
+                    {hasMoreIcons && (
+                      <button
+                        type="button"
+                        onClick={loadMoreIcons}
+                        className="px-5 py-2.5 rounded-lg bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300"
+                      >
+                        Load more ({visibleIcons.length} of {filteredIcons.length})
+                      </button>
+                    )}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>

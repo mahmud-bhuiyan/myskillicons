@@ -16,6 +16,9 @@ async function createApp() {
 
   const app = express();
 
+  // Trust proxy so req.ip / X-Forwarded-For work behind Vercel, nginx, etc.
+  app.set('trust proxy', 1);
+
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cors());
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'));

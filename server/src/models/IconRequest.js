@@ -37,6 +37,15 @@ const iconRequestSchema = new mongoose.Schema({
     default: 0,
   },
   upvotedBy: [String],
+  /** Client network details captured at submission time */
+  clientInfo: {
+    ip: String,
+    forwardedIps: [String],
+    userAgent: String,
+    origin: String,
+    referer: String,
+    acceptLanguage: String,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('IconRequest', iconRequestSchema);

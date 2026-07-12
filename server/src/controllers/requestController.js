@@ -1,5 +1,13 @@
 const IconRequest = require('../models/IconRequest');
 
+function sanitizeRequest(doc) {
+  if (!doc) return doc;
+  const obj = doc.toObject ? doc.toObject() : { ...doc };
+  delete obj.clientInfo;
+  delete obj.upvotedBy;
+  return obj;
+}
+
 /**
  * POST /api/v1/request — Submit a new icon request
  */
@@ -24,7 +32,7 @@ const submitRequest = async (req, res) => {
       }
       return res.status(200).json({
         message: 'A request for this icon already exists. Your upvote has been added.',
-        request: existing,
+        request: sanitizeRequest(existing),
       });
     }
 
@@ -35,9 +43,13 @@ const submitRequest = async (req, res) => {
       submittedSvg,
       submitterEmail,
       submitterName,
+      clientInfo: req.clientInfo,
     });
 
-    res.status(201).json({ message: 'Icon request submitted successfully', request: newRequest });
+    res.status(201).json({
+      message: 'Icon request submitted successfully',
+      request: sanitizeRequest(newRequest),
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -49,7 +61,7 @@ const submitRequest = async (req, res) => {
 const getRequests = async (req, res) => {
   try {
     const requests = await IconRequest.find({ status: 'pending' })
-      .select('-upvotedBy')
+      .select('-upvotedBy -clientInfo')
       .sort({ upvotes: -1, createdAt: -1 });
 
     res.json({ total: requests.length, requests });
@@ -77,7 +89,7 @@ const upvoteRequest = async (req, res) => {
     request.upvotedBy.push(email);
     await request.save();
 
-    res.json({ message: 'Upvote added', upvotes: request.upvotes });
+    res.json({ message: 'Upvote added successfully', upvotes: request.upvotes });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

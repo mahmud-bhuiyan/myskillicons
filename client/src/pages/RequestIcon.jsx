@@ -1,17 +1,30 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useRequests } from '../context/RequestsContext';
+import UpvoteModal from '../components/UpvoteModal';
 import api from '../utils/api';
 
 const fieldClass =
   'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-yellow-500 dark:focus:border-yellow-400';
+
+function quotaToast(err, fallback) {
+  const status = err.response?.status;
+  const message = err.response?.data?.error || fallback;
+  if (status === 429) {
+    toast.warning(message);
+  } else {
+    toast.error(message);
+  }
+}
 
 export default function RequestIcon() {
   const { requests: existingRequests, refresh } = useRequests();
   const [form, setForm] = useState({
     iconName: '', description: '', referenceUrl: '', submitterEmail: '', submitterName: ''
   });
-  const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [upvoteTarget, setUpvoteTarget] = useState(null);
+  const [upvoteLoading, setUpvoteLoading] = useState(false);
 
   useEffect(() => {
     refresh();
@@ -20,27 +33,38 @@ export default function RequestIcon() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setStatus(null);
     try {
       const res = await api.post('/request', form);
-      setStatus({ type: 'success', message: res.data.message });
+      toast.success(res.data.message || 'Icon request submitted successfully');
       setForm({ iconName: '', description: '', referenceUrl: '', submitterEmail: '', submitterName: '' });
       await refresh();
     } catch (err) {
-      setStatus({ type: 'error', message: err.response?.data?.error || 'Something went wrong' });
+      quotaToast(err, 'Something went wrong');
     }
     setLoading(false);
   };
 
-  const handleUpvote = async (id) => {
-    const email = prompt('Enter your email to upvote:');
-    if (!email) return;
+  const openUpvoteModal = (req) => {
+    setUpvoteTarget(req);
+  };
+
+  const closeUpvoteModal = () => {
+    if (upvoteLoading) return;
+    setUpvoteTarget(null);
+  };
+
+  const confirmUpvote = async (email) => {
+    if (!upvoteTarget) return;
+    setUpvoteLoading(true);
     try {
-      await api.post(`/request/${id}/upvote`, { email });
+      const res = await api.post(`/request/${upvoteTarget._id}/upvote`, { email });
+      toast.success(res.data.message || 'Upvote added successfully');
+      setUpvoteTarget(null);
       await refresh();
     } catch (err) {
-      alert(err.response?.data?.error || 'Could not upvote');
+      quotaToast(err, 'Could not upvote');
     }
+    setUpvoteLoading(false);
   };
 
   return (
@@ -109,16 +133,6 @@ export default function RequestIcon() {
           />
         </div>
 
-        {status && (
-          <div className={`p-3 rounded-lg text-sm ${
-            status.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
-          }`}>
-            {status.message}
-          </div>
-        )}
-
         <button
           type="submit"
           disabled={loading}
@@ -128,14 +142,14 @@ export default function RequestIcon() {
         </button>
       </form>
 
-      {/* Existing requests */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Pending Requests ({existingRequests.length})</h2>
         <div className="space-y-3">
           {existingRequests.map(req => (
             <div key={req._id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-start gap-4">
               <button
-                onClick={() => handleUpvote(req._id)}
+                type="button"
+                onClick={() => openUpvoteModal(req)}
                 className="flex flex-col items-center min-w-10 py-2 px-3 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:border-yellow-400 transition-colors"
               >
                 <span className="text-xs">▲</span>
@@ -157,6 +171,14 @@ export default function RequestIcon() {
           )}
         </div>
       </div>
+
+      <UpvoteModal
+        open={Boolean(upvoteTarget)}
+        iconName={upvoteTarget?.iconName}
+        loading={upvoteLoading}
+        onClose={closeUpvoteModal}
+        onConfirm={confirmUpvote}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ const {
 const {
   uploadSvg,
   listAdminIcons,
+  listAdminIconDetails,
   getAdminIcon,
   createIcon,
   updateIcon,
@@ -46,6 +47,7 @@ router.get('/requests', protect, getAllRequests);
 router.patch('/requests/:id', protect, updateRequestStatus);
 
 router.get('/icons', protect, listAdminIcons);
+router.get('/icons/details', protect, listAdminIconDetails);
 router.get('/icons/:key', protect, getAdminIcon);
 router.post('/icons', protect, handleMulter(uploadSvg), createIcon);
 router.put('/icons/:key', protect, handleMulter(uploadSvg), updateIcon);

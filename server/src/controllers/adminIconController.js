@@ -154,6 +154,35 @@ const getAdminIcon = async (req, res) => {
 };
 
 /**
+ * GET /api/v1/admin/icons/details?keys=a,b,c
+ * Batch full icons (incl. svgContent) for the visible admin page (max 20).
+ */
+const listAdminIconDetails = async (req, res) => {
+  try {
+    const keys = String(req.query.keys || '')
+      .split(',')
+      .map(normalizeKey)
+      .filter(Boolean)
+      .slice(0, 20);
+
+    if (keys.length === 0) {
+      return res.json({ icons: [] });
+    }
+
+    const icons = await Icon.find({ key: { $in: keys } }).lean();
+    const byKey = new Map(icons.map((doc) => [doc.key, doc]));
+    // Preserve request order so the client can zip easily.
+    const ordered = keys.map((key) => byKey.get(key)).filter(Boolean);
+
+    res.json({
+      icons: ordered.map((doc) => toAdminIcon(doc, { includeSvg: true })),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
  * POST /api/v1/admin/icons — upload / create icon
  */
 const createIcon = async (req, res) => {
@@ -270,6 +299,7 @@ const deleteIcon = async (req, res) => {
 module.exports = {
   uploadSvg,
   listAdminIcons,
+  listAdminIconDetails,
   getAdminIcon,
   createIcon,
   updateIcon,
