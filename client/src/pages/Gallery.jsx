@@ -14,6 +14,7 @@ export default function Gallery() {
   const [theme, setTheme] = useState('dark');
   const [size, setSize] = useState(48);
   const [selectedIcon, setSelectedIcon] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const {
     icons,
@@ -44,6 +45,13 @@ export default function Gallery() {
 
   const iconUrl = (key) =>
     buildIconUrl({ i: key, theme, width: size, height: size });
+
+  const copyUrl = () => {
+    if (!selectedIcon) return;
+    navigator.clipboard.writeText(iconUrl(selectedIcon.key));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const showInitialLoading = loading && icons.length === 0;
 
@@ -172,7 +180,10 @@ export default function Gallery() {
       {selectedIcon && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedIcon(null)}
+          onClick={() => {
+            setSelectedIcon(null);
+            setCopied(false);
+          }}
         >
           <div
             className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-6 max-w-sm w-full"
@@ -191,13 +202,20 @@ export default function Gallery() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => { navigator.clipboard.writeText(iconUrl(selectedIcon.key)); }}
-                className="py-2 bg-yellow-400 text-black rounded-lg text-sm font-medium hover:bg-yellow-300"
+                onClick={copyUrl}
+                className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                  copied
+                    ? 'bg-green-600 text-white'
+                    : 'bg-yellow-400 text-black hover:bg-yellow-300'
+                }`}
               >
-                Copy URL
+                {copied ? 'Copied!' : 'Copy URL'}
               </button>
               <button
-                onClick={() => setSelectedIcon(null)}
+                onClick={() => {
+                  setSelectedIcon(null);
+                  setCopied(false);
+                }}
                 className="py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm hover:border-zinc-400 dark:hover:border-zinc-500"
               >
                 Close
