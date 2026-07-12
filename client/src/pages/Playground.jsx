@@ -3,7 +3,7 @@ import { useIcons } from '../context/IconsContext';
 import { useGalleryIcons } from '../hooks/useGalleryIcons';
 import { buildIconUrl } from '../utils/serverUrl';
 
-const THEMES = ['light', 'dark'];
+const THEMES = ['dark', 'light'];
 const LAYOUTS = ['row', 'grid'];
 const SIZES = [24, 32, 48, 64, 80, 96];
 
@@ -17,7 +17,7 @@ const surfaceClass =
 export default function Playground() {
   const { categories, categoryCounts, error: catalogError, refresh } = useIcons();
   const [selected, setSelected] = useState([]);
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
   const [size, setSize] = useState(48);
   const [layout, setLayout] = useState('row');
   const [gap, setGap] = useState(8);
@@ -187,7 +187,24 @@ export default function Playground() {
 
           {/* Selected chips */}
           <div>
-            <label className="text-xs text-zinc-500 uppercase tracking-wider mb-2 block">Selected ({selected.length})</label>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-xs text-zinc-500 uppercase tracking-wider">Selected ({selected.length})</label>
+              {selected.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelected([]);
+                    setTheme('dark');
+                    setSize(48);
+                    setLayout('row');
+                    setGap(8);
+                  }}
+                  className="text-xs px-2 py-0.5 rounded bg-yellow-400 text-black font-medium hover:bg-yellow-300 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-1 min-h-8">
               {selected.length === 0 && <span className="text-zinc-500 dark:text-zinc-600 text-sm">Click icons to select</span>}
               {selected.map((key) => (

@@ -11,7 +11,7 @@ export default function Gallery() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
   const [size, setSize] = useState(48);
   const [selectedIcon, setSelectedIcon] = useState(null);
 
@@ -71,9 +71,12 @@ export default function Gallery() {
           onChange={(e) => setTheme(e.target.value)}
           className={fieldClass}
         >
-          {['light', 'dark'].map((t) => (
-            <option key={t} value={t}>
-              {t}
+          {[
+            { value: 'dark', label: 'Dark' },
+            { value: 'light', label: 'Light' },
+          ].map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
             </option>
           ))}
         </select>

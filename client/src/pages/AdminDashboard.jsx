@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAdminData } from '../context/AdminDataContext';
 import { useIcons } from '../context/IconsContext';
+import ColorField from '../components/ColorField';
 import api from '../utils/api';
 import { resolveServerUrl } from '../utils/serverUrl';
+import { normalizeHex } from '../utils/color';
 
 const STATUS_COLORS = {
   pending: 'text-yellow-400 bg-yellow-400/10 border-yellow-800',
@@ -60,6 +62,21 @@ function normalizeCategory(value) {
 function resolveTab(raw) {
   if (raw === 'requests' || raw === 'categories') return raw;
   return 'icons';
+}
+
+function formsEqual(a, b) {
+  if (!a || !b) return false;
+  return (
+    a.key === b.key &&
+    a.name === b.name &&
+    a.category === b.category &&
+    a.tags === b.tags &&
+    a.svgContent === b.svgContent &&
+    normalizeHex(a.lightBg) === normalizeHex(b.lightBg) &&
+    normalizeHex(a.lightPrimary) === normalizeHex(b.lightPrimary) &&
+    normalizeHex(a.darkBg) === normalizeHex(b.darkBg) &&
+    normalizeHex(a.darkPrimary) === normalizeHex(b.darkPrimary)
+  );
 }
 
 export default function AdminDashboard() {
@@ -122,6 +139,8 @@ export default function AdminDashboard() {
   const [orderError, setOrderError] = useState('');
   const categoryListRef = useRef(categoryList);
   categoryListRef.current = categoryList;
+  /** Snapshot of form when edit opened / last silent hydrate — used to disable Save when unchanged. */
+  const formBaselineRef = useRef(null);
 
   useEffect(() => {
     if (tab === 'requests') refreshRequests(filter);
@@ -172,6 +191,7 @@ export default function AdminDashboard() {
   };
 
   const resetForm = () => {
+    formBaselineRef.current = null;
     setForm(emptyForm);
     setSvgFile(null);
     setEditingKey(null);
@@ -184,6 +204,7 @@ export default function AdminDashboard() {
   };
 
   const openCreate = () => {
+    formBaselineRef.current = null;
     setForm(emptyForm);
     setSvgFile(null);
     setEditingKey(null);
@@ -216,6 +237,7 @@ export default function AdminDashboard() {
 
     setEditingKey(latest.key);
     setEditPreviewUrl(previewUrl);
+    formBaselineRef.current = nextForm;
     setForm(nextForm);
     setSvgFile(null);
     setFormError('');
@@ -242,17 +264,10 @@ export default function AdminDashboard() {
           darkBg: full.themes?.dark?.bg || prev.darkBg,
           darkPrimary: full.themes?.dark?.primary || prev.darkPrimary,
         };
-        if (
-          patched.name === prev.name &&
-          patched.category === prev.category &&
-          patched.tags === prev.tags &&
-          patched.svgContent === prev.svgContent &&
-          patched.lightBg === prev.lightBg &&
-          patched.lightPrimary === prev.lightPrimary &&
-          patched.darkBg === prev.darkBg &&
-          patched.darkPrimary === prev.darkPrimary
-        ) {
-          return prev;
+        if (formsEqual(patched, prev)) return prev;
+        // Advance baseline only when the user hasn't edited yet.
+        if (formBaselineRef.current && formsEqual(prev, formBaselineRef.current)) {
+          formBaselineRef.current = patched;
         }
         return patched;
       });
@@ -272,7 +287,11 @@ export default function AdminDashboard() {
 
     setForm((prev) => {
       if (prev.key !== editingKey || prev.svgContent) return prev;
-      return { ...prev, svgContent: latest.svgContent };
+      const next = { ...prev, svgContent: latest.svgContent };
+      if (formBaselineRef.current && formsEqual(prev, formBaselineRef.current)) {
+        formBaselineRef.current = next;
+      }
+      return next;
     });
   }, [icons, editingKey, showForm]);
 
@@ -289,8 +308,12 @@ export default function AdminDashboard() {
     reader.readAsText(file);
   };
 
+  const isFormDirty =
+    Boolean(svgFile) || !formsEqual(form, formBaselineRef.current);
+
   const handleSaveIcon = async (e) => {
     e.preventDefault();
+    if (editingKey && !isFormDirty) return;
     setFormError('');
     setFormSuccess('');
 
@@ -745,66 +768,40 @@ export default function AdminDashboard() {
 
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Light theme</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Dark theme</p>
                     <div className="flex gap-2">
-                      <label className="flex-1 text-xs text-zinc-400">
-                        BG
-                        <input
-                          type="color"
-                          className="mt-1 w-full h-9 bg-transparent border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer"
-                          value={form.lightBg}
-                          onChange={(e) => setForm({ ...form, lightBg: e.target.value })}
-                        />
-                      </label>
-                      <label className="flex-1 text-xs text-zinc-400">
-                        Primary
-                        <input
-                          type="color"
-                          className="mt-1 w-full h-9 bg-transparent border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer"
-                          value={form.lightPrimary}
-                          onChange={(e) => setForm({ ...form, lightPrimary: e.target.value })}
-                        />
-                      </label>
+                      <ColorField
+                        label="BG"
+                        value={form.darkBg}
+                        onChange={(hex) => setForm((prev) => ({ ...prev, darkBg: hex }))}
+                      />
+                      <ColorField
+                        label="Primary"
+                        value={form.darkPrimary}
+                        onChange={(hex) => setForm((prev) => ({ ...prev, darkPrimary: hex }))}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Dark theme</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Light theme</p>
                     <div className="flex gap-2">
-                      <label className="flex-1 text-xs text-zinc-400">
-                        BG
-                        <input
-                          type="color"
-                          className="mt-1 w-full h-9 bg-transparent border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer"
-                          value={form.darkBg}
-                          onChange={(e) => setForm({ ...form, darkBg: e.target.value })}
-                        />
-                      </label>
-                      <label className="flex-1 text-xs text-zinc-400">
-                        Primary
-                        <input
-                          type="color"
-                          className="mt-1 w-full h-9 bg-transparent border border-zinc-300 dark:border-zinc-700 rounded cursor-pointer"
-                          value={form.darkPrimary}
-                          onChange={(e) => setForm({ ...form, darkPrimary: e.target.value })}
-                        />
-                      </label>
+                      <ColorField
+                        label="BG"
+                        value={form.lightBg}
+                        onChange={(hex) => setForm((prev) => ({ ...prev, lightBg: hex }))}
+                      />
+                      <ColorField
+                        label="Primary"
+                        value={form.lightPrimary}
+                        onChange={(hex) => setForm((prev) => ({ ...prev, lightPrimary: hex }))}
+                      />
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-zinc-500 mb-1.5">SVG file</label>
-                  <input
-                    type="file"
-                    accept=".svg,image/svg+xml"
-                    onChange={onFileChange}
-                    className="block w-full text-sm text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-zinc-200 dark:file:bg-zinc-800 file:text-zinc-700 dark:file:text-zinc-200"
-                  />
                 </div>
 
                 <div>
                   <label className="block text-xs text-zinc-500 mb-1.5">
-                    Or paste SVG markup {editingKey ? '(leave unchanged to keep current)' : ''}
+                    Paste SVG markup {editingKey ? '(leave unchanged to keep current)' : ''}
                   </label>
                   <textarea
                     rows={6}
@@ -819,19 +816,37 @@ export default function AdminDashboard() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5">Or upload SVG file</label>
+                  <input
+                    type="file"
+                    accept=".svg,image/svg+xml"
+                    onChange={onFileChange}
+                    className="block w-full text-sm text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-zinc-200 dark:file:bg-zinc-800 file:text-zinc-700 dark:file:text-zinc-200"
+                  />
+                </div>
+
                 {form.svgContent && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4 flex-wrap">
                     <span className="text-xs text-zinc-500">Live preview</span>
-                    <div
-                      className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
-                      dangerouslySetInnerHTML={{
-                        __html: form.svgContent
-                          .replace(/\{\{WIDTH\}\}/g, '48')
-                          .replace(/\{\{HEIGHT\}\}/g, '48')
-                          .replace(/\{\{COLOR_BG\}\}/g, form.darkBg)
-                          .replace(/\{\{COLOR_PRIMARY\}\}/g, form.darkPrimary),
-                      }}
-                    />
+                    {[
+                      { label: 'Dark', bg: form.darkBg, primary: form.darkPrimary },
+                      { label: 'Light', bg: form.lightBg, primary: form.lightPrimary },
+                    ].map((theme) => (
+                      <div key={theme.label} className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-400">{theme.label}</span>
+                        <div
+                          className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 [&_svg]:max-w-full [&_svg]:max-h-full"
+                          dangerouslySetInnerHTML={{
+                            __html: form.svgContent
+                              .replace(/\{\{WIDTH\}\}/g, '48')
+                              .replace(/\{\{HEIGHT\}\}/g, '48')
+                              .replace(/\{\{COLOR_BG\}\}/g, theme.bg)
+                              .replace(/\{\{COLOR_PRIMARY\}\}/g, theme.primary),
+                          }}
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -848,8 +863,8 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     type="submit"
-                    disabled={saving}
-                    className="px-4 py-2 text-sm bg-yellow-400 text-black font-medium rounded-lg hover:bg-yellow-300 disabled:opacity-50"
+                    disabled={saving || (editingKey && !isFormDirty)}
+                    className="px-4 py-2 text-sm bg-yellow-400 text-black font-medium rounded-lg hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Saving…' : editingKey ? 'Save changes' : 'Upload to database'}
                   </button>

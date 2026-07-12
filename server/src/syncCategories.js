@@ -38,9 +38,9 @@ function applyMapToSeedFile() {
   }
 
   const header = `/**
- * Default icon seed data for MongoDB (tandpfun/skill-icons catalog).
- * Run via seedIcons on server start / npm run seed (skips keys that already exist).
- * Safe to use on local and live DBs — no filesystem SVG files required.
+ * Default icon catalog for MongoDB (tandpfun/skill-icons).
+ * Source of truth for seed icons — edit here, then restart server or \`npm run seed\`.
+ * seedIcons creates missing keys and updates name/category/tags/svgContent.
  * Icons: ${Object.keys(iconSeedData).length}
  */
 

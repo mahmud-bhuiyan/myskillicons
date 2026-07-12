@@ -1,7 +1,7 @@
 /**
- * Standalone seed for local or live MongoDB.
+ * Standalone catalog sync for local or live MongoDB.
  * Usage: npm run seed  (from server/)
- * Skips icons whose keys already exist.
+ * Same sync as server start — one seed path, updates from iconSeedData.
  */
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });

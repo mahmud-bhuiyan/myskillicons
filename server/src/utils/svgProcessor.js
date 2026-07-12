@@ -50,6 +50,17 @@ function processSingleIcon(iconKey, theme, width, height) {
 }
 
 /**
+ * Nest a single-icon SVG inside a batch canvas, preserving its viewBox so
+ * icons authored at different coordinate systems (e.g. 256 vs 48) scale correctly.
+ */
+function nestIconSvg(svg, x, y, width, height) {
+  const viewBoxMatch = svg.match(/viewBox="([^"]+)"/i);
+  const viewBox = viewBoxMatch ? viewBoxMatch[1] : `0 0 ${width} ${height}`;
+  const innerContent = svg.replace(/<svg[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
+  return `<svg x="${x}" y="${y}" width="${width}" height="${height}" viewBox="${viewBox}">${innerContent}</svg>`;
+}
+
+/**
  * Processes batch icons and returns combined SVG strip
  */
 function processBatchIcons(iconKeys, theme, width, height, layout = 'row', gap = 8) {
@@ -69,8 +80,7 @@ function processBatchIcons(iconKeys, theme, width, height, layout = 'row', gap =
     let combined = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${totalHeight}" viewBox="0 0 ${totalWidth} ${totalHeight}">`;
     svgs.forEach(({ svg }, index) => {
       const x = index * (width + gap);
-      const innerContent = svg.replace(/<svg[^>]*>/, '').replace('</svg>', '');
-      combined += `<g transform="translate(${x}, 0)">${innerContent}</g>`;
+      combined += nestIconSvg(svg, x, 0, width, height);
     });
     combined += '</svg>';
     return combined;
@@ -88,8 +98,7 @@ function processBatchIcons(iconKeys, theme, width, height, layout = 'row', gap =
     const row = Math.floor(index / cols);
     const x = col * (width + gap);
     const y = row * (height + gap);
-    const innerContent = svg.replace(/<svg[^>]*>/, '').replace('</svg>', '');
-    combined += `<g transform="translate(${x}, ${y})">${innerContent}</g>`;
+    combined += nestIconSvg(svg, x, y, width, height);
   });
   combined += '</svg>';
   return combined;

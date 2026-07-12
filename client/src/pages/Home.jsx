@@ -30,11 +30,11 @@ export default function Home() {
           One URL. No hosting. No CSS.
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <Link to="/playground" className="px-6 py-3 bg-yellow-400 text-black font-semibold rounded-xl hover:bg-yellow-300 transition-colors">
-            Open Playground
-          </Link>
-          <Link to="/gallery" className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors">
+          <Link to="/gallery" className="px-6 py-3 bg-yellow-400 text-black font-semibold rounded-xl hover:bg-yellow-300 transition-colors">
             Browse Icons
+          </Link>
+          <Link to="/playground" className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors">
+            Open Playground
           </Link>
         </div>
       </div>
