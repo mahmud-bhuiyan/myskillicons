@@ -23,6 +23,7 @@ const DEFAULT_ORDER = [
   'social',
   'testing',
   'tool',
+  'ui',
 ];
 
 /**
